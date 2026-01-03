@@ -12,6 +12,7 @@
         "format:check": "prettier . --check"
     },
     "dependencies": {
+        "@astrojs/tailwind": "^6.0.2",
         "astro": "^5.16.6",
         "canvas-confetti": "^1.9.4"
     },

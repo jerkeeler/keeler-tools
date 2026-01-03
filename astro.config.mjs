@@ -1,5 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import tailwind from '@astrojs/tailwind';
 
 /**
  * Minimal Astro integration to generate a sitemap during the build.
@@ -38,5 +39,10 @@ const localSitemap = () => ({
 // https://astro.build/config
 export default defineConfig({
     site: 'https://tools.keeler.dev',
-    integrations: [localSitemap()],
+    integrations: [
+        tailwind({
+            applyBaseStyles: false,
+        }),
+        localSitemap(),
+    ],
 });
