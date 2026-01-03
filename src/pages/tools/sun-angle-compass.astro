@@ -7,7 +7,7 @@ import ToolHeader from '../../components/ToolHeader.astro';
     title="Sun Angle Compass | Keeler Tools"
     description="Track the sun's azimuth, elevation, and hourly insolation at your location."
 >
-    <main class="min-h-screen bg-[#f7fbff]">
+    <main class="min-h-screen bg-background">
         <ToolHeader
             title="Sun Angle Compass"
             description="See where the sun sits in the sky right now, plus a simple hourly insolation curve for today."
@@ -388,7 +388,7 @@ import ToolHeader from '../../components/ToolHeader.astro';
             ctx.fillText(`${Math.round(value)} W/m²`, 4, y + 4);
         }
 
-        ctx.strokeStyle = '#24d1f8';
+        ctx.strokeStyle = 'rgb(36 209 248)';
         ctx.lineWidth = 2;
         ctx.beginPath();
         values.forEach((value, index) => {
