@@ -1,9 +1,0 @@
-[build]
-  publish = "dist"
-  command = "npm run build"
-
-[[redirects]]
-  from = "/*"
-  to = "https://tools.keeler.dev/:splat"
-  status = 301
-  force = true
