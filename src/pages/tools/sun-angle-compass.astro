@@ -1,0 +1,531 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ToolHeader from '../../components/ToolHeader.astro';
+---
+
+<Layout
+    title="Sun Angle Compass"
+    description="Track the sun's azimuth, elevation, and hourly insolation at your location."
+>
+    <main class="min-h-screen bg-[#f7fbff]">
+        <ToolHeader
+            title="Sun Angle Compass"
+            description="See where the sun sits in the sky right now, plus a simple hourly insolation curve for today."
+            tag="Solar geometry"
+        />
+
+        <section class="mx-auto grid max-w-6xl gap-8 px-6 py-16 lg:grid-cols-[1.1fr_0.9fr]">
+            <div
+                class="rounded-3xl border border-slate-200 bg-white p-8 shadow-[0_40px_120px_-70px_rgba(36,209,248,0.6)]"
+            >
+                <div class="flex items-center justify-between">
+                    <h2 class="font-display text-2xl font-semibold text-slate-900">
+                        Live sun angle
+                    </h2>
+                    <span
+                        class="rounded-full bg-brand/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-brand-dark"
+                    >
+                        Local time
+                    </span>
+                </div>
+
+                <p class="mt-3 text-sm text-slate-600">
+                    This tool uses your location to compute the sun's azimuth and elevation from
+                    basic solar geometry.
+                </p>
+
+                <div class="mt-6 flex flex-wrap items-center gap-4">
+                    <button
+                        class="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-semibold text-slate-900 transition hover:-translate-y-0.5 hover:bg-brand-dark"
+                        data-action="locate"
+                        type="button"
+                    >
+                        Use my location
+                        <span class="text-lg">↗</span>
+                    </button>
+                    <button
+                        class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-brand"
+                        data-action="preset"
+                        data-lat="90"
+                        data-lng="0"
+                        type="button"
+                    >
+                        North Pole
+                    </button>
+                    <button
+                        class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-brand"
+                        data-action="preset"
+                        data-lat="40.7128"
+                        data-lng="-74.006"
+                        type="button"
+                    >
+                        NYC
+                    </button>
+                    <button
+                        class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-brand"
+                        data-action="preset"
+                        data-lat="-34.6037"
+                        data-lng="-58.3816"
+                        type="button"
+                    >
+                        Buenos Aires
+                    </button>
+                    <button
+                        class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-brand"
+                        data-action="preset"
+                        data-lat="0"
+                        data-lng="0"
+                        type="button"
+                    >
+                        Equator
+                    </button>
+                    <p class="text-sm text-slate-500" data-status>Waiting for location access.</p>
+                </div>
+
+                <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+                    <div class="flex flex-wrap items-end gap-4">
+                        <div class="flex-1">
+                            <label
+                                class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"
+                            >
+                                Latitude
+                            </label>
+                            <input
+                                class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-brand focus:outline-none"
+                                data-lat-input
+                                inputmode="decimal"
+                                placeholder="e.g. 39.95"
+                                type="text"
+                            />
+                        </div>
+                        <div class="flex-1">
+                            <label
+                                class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"
+                            >
+                                Longitude
+                            </label>
+                            <input
+                                class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-brand focus:outline-none"
+                                data-lng-input
+                                inputmode="decimal"
+                                placeholder="e.g. -75.16"
+                                type="text"
+                            />
+                        </div>
+                        <button
+                            class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-brand"
+                            data-action="manual"
+                            type="button"
+                        >
+                            Set location
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_1fr]">
+                    <div class="relative flex items-center justify-center">
+                        <div
+                            class="relative flex h-64 w-64 items-center justify-center rounded-full border border-slate-200 bg-slate-50"
+                        >
+                            <div
+                                class="absolute inset-8 rounded-full border border-dashed border-slate-200"
+                            >
+                            </div>
+                            <div
+                                class="absolute left-1/2 top-3 -translate-x-1/2 text-xs font-semibold text-slate-500"
+                            >
+                                N
+                            </div>
+                            <div
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500"
+                            >
+                                E
+                            </div>
+                            <div
+                                class="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs font-semibold text-slate-500"
+                            >
+                                S
+                            </div>
+                            <div
+                                class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500"
+                            >
+                                W
+                            </div>
+                            <div
+                                class="absolute bottom-1/2 h-28 w-1 origin-bottom rounded-full bg-brand shadow-[0_10px_25px_rgba(36,209,248,0.6)]"
+                                data-needle
+                            >
+                            </div>
+                            <div
+                                class="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-dark"
+                            >
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-200 bg-white p-5">
+                        <h3 class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+                            Current readout
+                        </h3>
+                        <div class="mt-4 grid gap-4">
+                            <div>
+                                <p class="text-sm text-slate-500">Azimuth</p>
+                                <p
+                                    class="font-display text-2xl font-semibold text-slate-900"
+                                    data-azimuth
+                                >
+                                    --
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500">Elevation</p>
+                                <p
+                                    class="font-display text-2xl font-semibold text-slate-900"
+                                    data-elevation
+                                >
+                                    --
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500">Location</p>
+                                <p class="text-sm font-semibold text-slate-700" data-location>--</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500">Updated</p>
+                                <p class="text-sm font-semibold text-slate-700" data-updated>--</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-6">
+                <div class="rounded-3xl border border-slate-200 bg-white p-6">
+                    <h3 class="font-display text-xl font-semibold text-slate-900">
+                        Hourly insolation
+                    </h3>
+                    <p class="mt-2 text-sm text-slate-600">
+                        A simple line graph showing the estimated solar insolation for today in one
+                        hour buckets.
+                    </p>
+                    <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <canvas class="h-48 w-full" data-insolation></canvas>
+                    </div>
+                </div>
+
+                <div class="rounded-3xl border border-slate-200 bg-white p-6">
+                    <h3 class="font-display text-xl font-semibold text-slate-900">How it works</h3>
+                    <p class="mt-2 text-sm text-slate-600">
+                        Solar position is computed with standard astronomical formulas using your
+                        latitude, longitude, and the current time. Insolation is estimated using a
+                        top-of-atmosphere model with atmospheric effects ignored.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+</Layout>
+
+<script>
+    const locateButton = document.querySelector('[data-action="locate"]');
+    const manualButton = document.querySelector('[data-action="manual"]');
+    const statusEl = document.querySelector('[data-status]');
+    const azimuthEl = document.querySelector('[data-azimuth]');
+    const elevationEl = document.querySelector('[data-elevation]');
+    const locationEl = document.querySelector('[data-location]');
+    const updatedEl = document.querySelector('[data-updated]');
+    const needleEl = document.querySelector('[data-needle]');
+    const insolationCanvas = document.querySelector('[data-insolation]');
+    const latInput = document.querySelector('[data-lat-input]');
+    const lngInput = document.querySelector('[data-lng-input]');
+    const presetButtons = document.querySelectorAll('[data-action="preset"]');
+
+    let currentCoords = null;
+    let refreshTimer = null;
+
+    const setStatus = (message) => {
+        if (!statusEl) return;
+        statusEl.textContent = message;
+    };
+
+    const toRadians = (degrees) => (degrees * Math.PI) / 180;
+    const toDegrees = (radians) => (radians * 180) / Math.PI;
+
+    const getJulianDay = (date) => date.getTime() / 86400000 + 2440587.5;
+
+    const getSunPosition = (date, latitude, longitude) => {
+        const jd = getJulianDay(date);
+        const t = (jd - 2451545.0) / 36525;
+
+        const l0 = (280.46646 + t * (36000.76983 + t * 0.0003032)) % 360;
+        const m = 357.52911 + t * (35999.05029 - 0.0001537 * t);
+        const e = 0.016708634 - t * (0.000042037 + 0.0000001267 * t);
+
+        const mRad = toRadians(m);
+        const c =
+            Math.sin(mRad) * (1.914602 - t * (0.004817 + 0.000014 * t)) +
+            Math.sin(2 * mRad) * (0.019993 - 0.000101 * t) +
+            Math.sin(3 * mRad) * 0.000289;
+
+        const trueLongitude = l0 + c;
+        const omega = 125.04 - 1934.136 * t;
+        const lambda = trueLongitude - 0.00569 - 0.00478 * Math.sin(toRadians(omega));
+
+        const meanObliquity =
+            23 + (26 + (21.448 - t * (46.815 + t * (0.00059 - t * 0.001813))) / 60) / 60;
+        const obliquityCorrection = meanObliquity + 0.00256 * Math.cos(toRadians(omega));
+
+        const declination = Math.asin(
+            Math.sin(toRadians(obliquityCorrection)) * Math.sin(toRadians(lambda))
+        );
+
+        const y = Math.tan(toRadians(obliquityCorrection / 2)) ** 2;
+        const eqTime =
+            4 *
+            toDegrees(
+                y * Math.sin(2 * toRadians(l0)) -
+                    2 * e * Math.sin(mRad) +
+                    4 * e * y * Math.sin(mRad) * Math.cos(2 * toRadians(l0)) -
+                    0.5 * y * y * Math.sin(4 * toRadians(l0)) -
+                    1.25 * e * e * Math.sin(2 * mRad)
+            );
+
+        const timezoneOffset = date.getTimezoneOffset();
+        const localMinutes = date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60;
+        const trueSolarTime =
+            (localMinutes + eqTime + 4 * longitude + timezoneOffset + 1440) % 1440;
+        let hourAngle = trueSolarTime / 4 - 180;
+        if (hourAngle < -180) hourAngle += 360;
+
+        const hourAngleRad = toRadians(hourAngle);
+        const latRad = toRadians(latitude);
+
+        const cosZenith =
+            Math.sin(latRad) * Math.sin(declination) +
+            Math.cos(latRad) * Math.cos(declination) * Math.cos(hourAngleRad);
+        const zenith = Math.acos(Math.min(Math.max(cosZenith, -1), 1));
+        const elevation = 90 - toDegrees(zenith);
+
+        let azimuth =
+            toDegrees(
+                Math.atan2(
+                    Math.sin(hourAngleRad),
+                    Math.cos(hourAngleRad) * Math.sin(latRad) -
+                        Math.tan(declination) * Math.cos(latRad)
+                )
+            ) + 180;
+        azimuth = (azimuth + 360) % 360;
+
+        return {
+            azimuth,
+            elevation,
+            cosZenith,
+            declination,
+        };
+    };
+
+    const getDayOfYear = (date) => {
+        const start = new Date(date.getFullYear(), 0, 0);
+        const diff = date - start + (start.getTimezoneOffset() - date.getTimezoneOffset()) * 60000;
+        return Math.floor(diff / 86400000);
+    };
+
+    const getDailyInsolation = (date, latitude, longitude) => {
+        const dayOfYear = getDayOfYear(date);
+        const solarConstant = 1361;
+        const eccentricityFactor = 1 + 0.033 * Math.cos((2 * Math.PI * dayOfYear) / 365);
+        const adjustedConstant = solarConstant * eccentricityFactor;
+
+        return Array.from({ length: 24 }, (_, hour) => {
+            const hourDate = new Date(date);
+            hourDate.setHours(hour, 0, 0, 0);
+            const { cosZenith } = getSunPosition(hourDate, latitude, longitude);
+            return Math.max(0, adjustedConstant * cosZenith);
+        });
+    };
+
+    const drawInsolationChart = (values) => {
+        if (!insolationCanvas) return;
+        const parent = insolationCanvas.parentElement;
+        if (!parent) return;
+
+        const width = parent.clientWidth - 32;
+        const height = 180;
+        insolationCanvas.width = width;
+        insolationCanvas.height = height;
+
+        const ctx = insolationCanvas.getContext('2d');
+        if (!ctx) return;
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+
+        const maxValue = Math.max(...values, 1);
+        const padding = 28;
+        const chartWidth = width - padding * 2;
+        const chartHeight = height - padding * 2;
+
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, height - padding);
+        ctx.lineTo(width - padding, height - padding);
+        ctx.stroke();
+
+        const yTicks = 4;
+        ctx.fillStyle = '#64748b';
+        ctx.font = '11px "IBM Plex Sans"';
+        for (let i = 0; i <= yTicks; i += 1) {
+            const value = (maxValue * i) / yTicks;
+            const y = height - padding - (chartHeight * i) / yTicks;
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.beginPath();
+            ctx.moveTo(padding, y);
+            ctx.lineTo(width - padding, y);
+            ctx.stroke();
+            ctx.fillText(`${Math.round(value)} W/m²`, 4, y + 4);
+        }
+
+        ctx.strokeStyle = '#24d1f8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        values.forEach((value, index) => {
+            const x = padding + (chartWidth * index) / (values.length - 1);
+            const y = height - padding - (chartHeight * value) / maxValue;
+            if (index === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        });
+        ctx.stroke();
+
+        const sunriseIndex = values.findIndex((value) => value > 0);
+        const sunsetIndex =
+            values.length - 1 - [...values].reverse().findIndex((value) => value > 0);
+        const hasSunrise = sunriseIndex >= 0 && sunriseIndex < values.length;
+        const hasSunset = sunsetIndex >= 0 && sunsetIndex < values.length;
+        const sunriseX = hasSunrise
+            ? padding + (chartWidth * sunriseIndex) / (values.length - 1)
+            : null;
+        const sunsetX = hasSunset
+            ? padding + (chartWidth * sunsetIndex) / (values.length - 1)
+            : null;
+
+        ctx.strokeStyle = '#94a3b8';
+        ctx.setLineDash([4, 4]);
+        if (sunriseX !== null) {
+            ctx.beginPath();
+            ctx.moveTo(sunriseX, padding);
+            ctx.lineTo(sunriseX, height - padding);
+            ctx.stroke();
+        }
+        if (sunsetX !== null) {
+            ctx.beginPath();
+            ctx.moveTo(sunsetX, padding);
+            ctx.lineTo(sunsetX, height - padding);
+            ctx.stroke();
+        }
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = '#0f172a';
+        ctx.font = '12px "IBM Plex Sans"';
+        ctx.fillText('0h', padding, height - 6);
+        ctx.fillText('12h', padding + chartWidth / 2 - 8, height - 6);
+        ctx.fillText('24h', width - padding - 18, height - 6);
+        if (sunriseX !== null) {
+            ctx.fillText('Sunrise', sunriseX - 18, padding - 6);
+        }
+        if (sunsetX !== null) {
+            ctx.fillText('Sunset', sunsetX - 16, padding - 6);
+        }
+    };
+
+    const updateDisplay = (coords) => {
+        const now = new Date();
+        const { azimuth, elevation } = getSunPosition(now, coords.latitude, coords.longitude);
+
+        if (azimuthEl) azimuthEl.textContent = `${azimuth.toFixed(1)}°`;
+        if (elevationEl) elevationEl.textContent = `${elevation.toFixed(1)}°`;
+        if (locationEl) {
+            locationEl.textContent = `${coords.latitude.toFixed(3)}, ${coords.longitude.toFixed(3)}`;
+        }
+        if (updatedEl) updatedEl.textContent = now.toLocaleTimeString();
+        if (needleEl) needleEl.style.transform = `rotate(${azimuth}deg)`;
+
+        const hourly = getDailyInsolation(now, coords.latitude, coords.longitude);
+        drawInsolationChart(hourly);
+    };
+
+    const startUpdates = (coords) => {
+        currentCoords = coords;
+        updateDisplay(coords);
+        setStatus('Tracking sun position for your location.');
+
+        if (refreshTimer) {
+            clearInterval(refreshTimer);
+        }
+        refreshTimer = setInterval(() => {
+            if (!currentCoords) return;
+            updateDisplay(currentCoords);
+        }, 60000);
+    };
+
+    const locate = () => {
+        if (!navigator.geolocation) {
+            setStatus('Geolocation is not supported in this browser.');
+            return;
+        }
+
+        setStatus('Requesting location access...');
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                startUpdates({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                });
+            },
+            () => {
+                setStatus('Location permission denied. Enable it to see the sun angle.');
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
+
+    const useManualLocation = () => {
+        const lat = Number.parseFloat(latInput?.value || '');
+        const lng = Number.parseFloat(lngInput?.value || '');
+        if (Number.isNaN(lat) || Number.isNaN(lng)) {
+            setStatus('Enter valid latitude and longitude values.');
+            return;
+        }
+
+        startUpdates({ latitude: lat, longitude: lng });
+        setStatus('Tracking sun position for the manual location.');
+    };
+
+    const usePreset = (button) => {
+        const lat = Number.parseFloat(button.dataset.lat || '');
+        const lng = Number.parseFloat(button.dataset.lng || '');
+        if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+
+        startUpdates({ latitude: lat, longitude: lng });
+        setStatus(`Tracking sun position for ${button.textContent}.`);
+    };
+
+    if (locateButton) {
+        locateButton.addEventListener('click', locate);
+    }
+
+    if (manualButton) {
+        manualButton.addEventListener('click', useManualLocation);
+    }
+
+    if (presetButtons.length > 0) {
+        presetButtons.forEach((button) => {
+            button.addEventListener('click', () => usePreset(button));
+        });
+    }
+</script>
