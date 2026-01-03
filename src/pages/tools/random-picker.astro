@@ -1,0 +1,354 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ToolHeader from '../../components/ToolHeader.astro';
+---
+
+<Layout
+    title="Random Picker | Keeler Tools"
+    description="Can't decide? Let the universe choose for you with this satisfying random picker."
+>
+    <ToolHeader
+        title="Random Picker"
+        description="Enter your options, roll the dice, and let fate decide. Perfect for lunch choices, tie-breakers, or just shaking things up."
+        tag="Utility"
+    />
+
+    <main class="mx-auto max-w-4xl px-6 py-12">
+        <!-- Main Card -->
+        <div
+            class="relative w-full overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50 sm:p-10"
+        >
+            <!-- Background Decoration -->
+            <div
+                class="pointer-events-none absolute -right-20 top-20 h-64 w-64 rounded-full bg-brand/10 blur-[80px]"
+            >
+            </div>
+
+            <!-- Result Area -->
+            <div class="mb-10 w-full text-center">
+                <div
+                    id="result-container"
+                    class="mx-auto flex h-48 w-full items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50 px-8 transition-all duration-300"
+                >
+                    <div class="flex w-full flex-col items-center gap-4">
+                        <!-- Dice Icon -->
+                        <svg
+                            id="dice-icon"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="h-14 w-14 flex-shrink-0 text-slate-300 transition-transform"
+                        >
+                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                            <g class="dice-dots">
+                                <path d="M16 8h.01"></path>
+                                <path d="M8 8h.01"></path>
+                                <path d="M8 16h.01"></path>
+                                <path d="M16 16h.01"></path>
+                                <path d="M12 12h.01"></path>
+                            </g>
+                        </svg>
+                        <div class="w-full">
+                            <span
+                                id="result-text"
+                                class="line-clamp-2 block w-full break-words font-display text-2xl font-semibold text-slate-400 sm:text-3xl"
+                            >
+                                Add items to start
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="mb-8 flex gap-3">
+                <input
+                    type="text"
+                    id="item-input"
+                    placeholder="Enter an option (e.g., Tacos)"
+                    class="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                />
+                <button
+                    id="add-btn"
+                    class="rounded-xl bg-slate-900 px-6 py-3 font-semibold text-white transition hover:bg-slate-700 active:translate-y-0.5"
+                >
+                    Add
+                </button>
+            </div>
+
+            <!-- List Area -->
+            <ul id="items-list" class="mb-8 flex flex-wrap gap-2">
+                <!-- Items will be injected here -->
+            </ul>
+
+            <!-- Controls -->
+            <div class="flex flex-col gap-4 sm:flex-row">
+                <button
+                    id="roll-btn"
+                    class="group flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-lg font-bold text-slate-900 transition-all hover:-translate-y-0.5 hover:bg-brand-dark disabled:opacity-50 disabled:hover:translate-y-0"
+                    disabled
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="h-5 w-5 transition-transform group-hover:rotate-180"
+                    >
+                        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                        <path d="M3 3v5h5"></path>
+                        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+                        <path d="M16 21h5v-5"></path>
+                    </svg>
+                    Roll the Dice
+                </button>
+                <button
+                    id="clear-btn"
+                    class="rounded-xl border border-slate-200 bg-white px-6 py-4 font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                >
+                    Clear All
+                </button>
+            </div>
+        </div>
+    </main>
+</Layout>
+
+<script>
+    import confetti from 'canvas-confetti';
+
+    // State
+    let items = [];
+    let isRolling = false;
+
+    // DOM Elements
+    const input = document.getElementById('item-input') as HTMLInputElement;
+    const addBtn = document.getElementById('add-btn');
+    const rollBtn = document.getElementById('roll-btn') as HTMLButtonElement;
+    const clearBtn = document.getElementById('clear-btn');
+    const itemsList = document.getElementById('items-list');
+    const resultText = document.getElementById('result-text');
+    const resultContainer = document.getElementById('result-container');
+    const diceIcon = document.getElementById('dice-icon');
+    const diceDots = diceIcon?.querySelector('.dice-dots');
+
+    const DICE_FACES = [
+        '<path d="M12 12h.01"></path>', // 1
+        '<path d="M16 8h.01"></path><path d="M8 16h.01"></path>', // 2
+        '<path d="M16 8h.01"></path><path d="M12 12h.01"></path><path d="M8 16h.01"></path>', // 3
+        '<path d="M8 8h.01"></path><path d="M16 8h.01"></path><path d="M8 16h.01"></path><path d="M16 16h.01"></path>', // 4
+        '<path d="M8 8h.01"></path><path d="M16 8h.01"></path><path d="M12 12h.01"></path><path d="M8 16h.01"></path><path d="M16 16h.01"></path>', // 5
+        '<path d="M8 8h.01"></path><path d="M8 12h.01"></path><path d="M8 16h.01"></path><path d="M16 8h.01"></path><path d="M16 12h.01"></path><path d="M16 16h.01"></path>', // 6
+    ];
+
+    // Load from LocalStorage
+    const saved = localStorage.getItem('keeler-random-picker-items');
+    if (saved) {
+        items = JSON.parse(saved);
+        renderList();
+        updateUIState();
+    }
+
+    // Event Listeners
+    addBtn?.addEventListener('click', addItem);
+    input?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') addItem();
+    });
+    rollBtn?.addEventListener('click', rollDice);
+    clearBtn?.addEventListener('click', clearAll);
+
+    // Functions
+    function addItem() {
+        const text = input.value.trim();
+        if (!text) return;
+
+        items.push(text);
+        save();
+        renderList();
+        updateUIState();
+        input.value = '';
+        input.focus();
+    }
+
+    function removeItem(index) {
+        if (isRolling) return;
+        items.splice(index, 1);
+        save();
+        renderList();
+        updateUIState();
+    }
+
+    function clearAll() {
+        if (isRolling) return;
+        if (!confirm('Are you sure you want to clear the list?')) return;
+        items = [];
+        save();
+        renderList();
+        updateUIState();
+        resetResult();
+    }
+
+    function save() {
+        localStorage.setItem('keeler-random-picker-items', JSON.stringify(items));
+    }
+
+    function updateUIState() {
+        if (items.length === 0) {
+            rollBtn.disabled = true;
+            resultText.innerText = 'Add items to start';
+            resultText.className =
+                'line-clamp-2 block w-full break-words font-display text-2xl font-semibold text-slate-400 sm:text-3xl';
+            diceIcon.classList.remove('text-brand-dark');
+            diceIcon.classList.add('text-slate-300');
+        } else {
+            rollBtn.disabled = false;
+            if (resultText.innerText === 'Add items to start') {
+                resultText.innerText = 'Ready to roll?';
+                resultText.className =
+                    'line-clamp-2 block w-full break-words font-display text-2xl font-semibold text-brand-dark sm:text-3xl';
+                diceIcon.classList.remove('text-slate-300');
+                diceIcon.classList.add('text-brand-dark');
+            }
+        }
+    }
+
+    function resetResult() {
+        resultContainer.className =
+            'mx-auto flex h-48 w-full items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50 px-8 transition-all duration-300';
+    }
+
+    function renderList() {
+        itemsList.innerHTML = '';
+        items.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.className =
+                'flex max-w-full items-start gap-2 rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 animate-in fade-in zoom-in duration-200';
+
+            const span = document.createElement('span');
+            span.innerText = item;
+            span.className = 'break-words min-w-0 flex-1';
+
+            const btn = document.createElement('button');
+            btn.innerHTML = '&times;';
+            btn.className =
+                'mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-slate-200 hover:text-red-500';
+            btn.onclick = () => removeItem(index);
+
+            li.appendChild(span);
+            li.appendChild(btn);
+            itemsList.appendChild(li);
+        });
+    }
+
+    function rollDice() {
+        if (isRolling || items.length === 0) return;
+        isRolling = true;
+        rollBtn.disabled = true;
+        input.disabled = true;
+
+        // Visual setup
+        resultContainer.className =
+            'flex h-40 w-full items-center justify-center rounded-2xl border-2 border-brand bg-white shadow-inner transition-colors duration-300';
+        diceIcon.classList.add('animate-spin-slow');
+
+        let steps = 0;
+        const maxSteps = 20; // How many shuffles before stopping
+        let speed = 50;
+        let shuffleInterval;
+
+        // Sound effect (optional, maybe later)
+
+        const cycle = () => {
+            // Pick a random item to show temporarily
+            const randomItem = items[Math.floor(Math.random() * items.length)];
+            resultText.innerText = randomItem;
+            resultText.className =
+                'line-clamp-2 block w-full break-words font-display text-3xl font-bold text-slate-400 blur-[0.5px] sm:text-4xl';
+
+            // Randomly change dice face
+            if (diceDots) {
+                diceDots.innerHTML = DICE_FACES[Math.floor(Math.random() * DICE_FACES.length)];
+            }
+
+            steps++;
+
+            if (steps < maxSteps) {
+                // Slow down gradually
+                if (steps > maxSteps - 5) speed += 100;
+                clearInterval(shuffleInterval);
+                shuffleInterval = setInterval(cycle, speed);
+            } else {
+                // Final winner
+                clearInterval(shuffleInterval);
+                finishRoll();
+            }
+        };
+
+        shuffleInterval = setInterval(cycle, speed);
+    }
+
+    function finishRoll() {
+        const winner = items[Math.floor(Math.random() * items.length)];
+
+        // Confetti-like effect (text pop)
+        resultText.innerText = winner;
+        resultText.className =
+            'line-clamp-2 block w-full break-words font-display text-4xl font-bold text-brand-dark animate-in zoom-in duration-300 sm:text-5xl';
+
+        diceIcon.classList.remove('animate-spin-slow');
+
+        // Fire confetti
+        const duration = 3 * 1000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+        const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+        const interval = setInterval(function () {
+            const timeLeft = animationEnd - Date.now();
+
+            if (timeLeft <= 0) {
+                return clearInterval(interval);
+            }
+
+            const particleCount = 50 * (timeLeft / duration);
+            // since particles fall down, start a bit higher than random
+            confetti({
+                ...defaults,
+                particleCount,
+                origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+            });
+            confetti({
+                ...defaults,
+                particleCount,
+                origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+            });
+        }, 250);
+
+        // Reset state
+        isRolling = false;
+        rollBtn.disabled = false;
+        input.disabled = false;
+        input.focus();
+    }
+</script>
+
+<style>
+    .animate-spin-slow {
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>

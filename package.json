@@ -12,9 +12,11 @@
         "format:check": "prettier . --check"
     },
     "dependencies": {
-        "astro": "^5.16.6"
+        "astro": "^5.16.6",
+        "canvas-confetti": "^1.9.4"
     },
     "devDependencies": {
+        "@types/canvas-confetti": "^1.9.0",
         "autoprefixer": "^10.4.23",
         "husky": "^9.1.7",
         "postcss": "^8.5.6",
