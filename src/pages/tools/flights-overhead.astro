@@ -1,0 +1,195 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout
+	title="Flights Overhead"
+	description="See flights within five miles of your current location."
+>
+	<main class="min-h-screen bg-[#f7fbff]">
+		<header class="relative overflow-hidden border-b border-slate-200">
+			<div class="absolute -left-16 top-10 h-40 w-40 rounded-full bg-brand/30 blur-[90px]">
+			</div>
+			<div
+				class="absolute right-10 top-6 h-32 w-32 rounded-full bg-brand-dark/30 blur-[80px]"
+			>
+			</div>
+
+			<div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-10">
+				<div>
+					<a
+						class="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500"
+						href="/"
+					>
+						Back to tools
+					</a>
+					<h1 class="mt-3 font-display text-3xl font-semibold text-slate-900 sm:text-4xl">
+						Flights Overhead
+					</h1>
+					<p class="mt-2 max-w-xl text-slate-600">
+						Request location access, then discover flights within roughly five miles of
+						you.
+					</p>
+				</div>
+				<div
+					class="hidden rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 sm:block"
+				>
+					Live radar
+				</div>
+			</div>
+		</header>
+
+		<section class="mx-auto grid max-w-6xl gap-8 px-6 py-16 lg:grid-cols-[1.1fr_0.9fr]">
+			<div
+				class="rounded-3xl border border-slate-200 bg-white p-8 shadow-[0_40px_120px_-70px_rgba(36,209,248,0.6)]"
+			>
+				<div class="flex items-center justify-between">
+					<h2 class="font-display text-2xl font-semibold text-slate-900">Live lookup</h2>
+					<span
+						class="rounded-full bg-brand/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-brand-dark"
+					>
+						Radius 5 mi
+					</span>
+				</div>
+
+				<p class="mt-3 text-sm text-slate-600">
+					This tool needs your current location to fetch nearby aircraft. Location data
+					stays in your browser.
+				</p>
+
+				<div class="mt-6 flex flex-wrap items-center gap-4">
+					<button
+						class="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-semibold text-slate-900 transition hover:-translate-y-0.5 hover:bg-brand-dark"
+						data-action="locate"
+						type="button"
+					>
+						Locate flights
+						<span class="text-lg">↗</span>
+					</button>
+					<p class="text-sm text-slate-500" data-status>Waiting for location access.</p>
+				</div>
+
+				<div class="mt-8 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5">
+					<h3 class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+						Results
+					</h3>
+					<div class="mt-4 space-y-4" data-results></div>
+				</div>
+			</div>
+
+			<div class="flex flex-col gap-6">
+				<div class="rounded-3xl border border-slate-200 bg-white p-6">
+					<h3 class="font-display text-xl font-semibold text-slate-900">How it works</h3>
+					<p class="mt-2 text-sm text-slate-600">
+						The tool requests geolocation permission, then calls your chosen flights API
+						with your latitude, longitude, and a five mile radius. Results render
+						instantly below.
+					</p>
+				</div>
+				<div class="rounded-3xl border border-slate-200 bg-white p-6">
+					<h3 class="font-display text-xl font-semibold text-slate-900">API details</h3>
+					<p class="mt-2 text-sm text-slate-600">
+						Wire up any endpoint you like. Update the `API_ENDPOINT` constant in the
+						page script to point to your flights data source.
+					</p>
+				</div>
+			</div>
+		</section>
+	</main>
+</Layout>
+
+<script>
+	const API_ENDPOINT = '';
+
+	const statusEl = document.querySelector('[data-status]');
+	const resultsEl = document.querySelector('[data-results]');
+	const locateButton = document.querySelector("[data-action='locate']");
+
+	const setStatus = (message) => {
+		if (!statusEl) return;
+		statusEl.textContent = message;
+	};
+
+	const renderFlights = (flights) => {
+		if (!resultsEl) return;
+		resultsEl.innerHTML = '';
+
+		if (!flights.length) {
+			resultsEl.innerHTML = `
+				<div class="rounded-xl bg-white p-4 text-sm text-slate-500">
+					No flights to show yet. Enable the API endpoint and try again.
+				</div>
+			`;
+			return;
+		}
+
+		flights.forEach((flight) => {
+			const card = document.createElement('div');
+			card.className = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-sm';
+			card.innerHTML = `
+				<div class="flex items-center justify-between">
+					<p class="font-display text-lg font-semibold text-slate-900">${flight.callsign || 'Unknown'}</p>
+					<span class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-dark">${flight.distance} mi</span>
+				</div>
+				<p class="mt-2 text-sm text-slate-600">Altitude: ${flight.altitude} ft</p>
+				<p class="mt-1 text-xs text-slate-500">Heading: ${flight.heading}°</p>
+			`;
+			resultsEl.appendChild(card);
+		});
+	};
+
+	const fetchFlights = async (coords) => {
+		if (!API_ENDPOINT) {
+			setStatus('Add a flights API endpoint to enable live data.');
+			renderFlights([]);
+			return;
+		}
+
+		setStatus('Fetching flights overhead...');
+		const query = new URLSearchParams({
+			lat: coords.latitude.toString(),
+			lng: coords.longitude.toString(),
+			radius: '5',
+		});
+
+		// Expect a JSON array of flight objects: { callsign, altitude, heading, distance }.
+		const response = await fetch(`${API_ENDPOINT}?${query.toString()}`);
+		if (!response.ok) {
+			throw new Error('Flight API request failed.');
+		}
+		return response.json();
+	};
+
+	const locateFlights = () => {
+		if (!navigator.geolocation) {
+			setStatus('Geolocation is not supported in this browser.');
+			return;
+		}
+
+		setStatus('Requesting location access...');
+		navigator.geolocation.getCurrentPosition(
+			async (position) => {
+				try {
+					const flights = await fetchFlights(position.coords);
+					if (Array.isArray(flights)) {
+						renderFlights(flights);
+						setStatus(`Found ${flights.length} flight(s) nearby.`);
+					} else {
+						throw new Error('Unexpected API response format.');
+					}
+				} catch (error) {
+					setStatus('Unable to load flights. Check the API endpoint and try again.');
+					renderFlights([]);
+				}
+			},
+			() => {
+				setStatus('Location permission denied. Enable it to see flights overhead.');
+			},
+			{ enableHighAccuracy: true, timeout: 10000 }
+		);
+	};
+
+	if (locateButton) {
+		locateButton.addEventListener('click', locateFlights);
+	}
+</script>
