@@ -1,5 +1,19 @@
 ---
 import Layout from '../layouts/Layout.astro';
+
+const tools = [
+    {
+        title: 'Sun Angle Compass',
+        description: "Track the sun's azimuth, elevation, and today's insolation curve.",
+        href: '/tools/sun-angle-compass',
+    },
+    {
+        title: 'Random Picker',
+        description: "Can't decide? Input your options and let the dice decide for you.",
+        href: '/tools/random-picker',
+    },
+];
+const [featuredTool, secondaryTool] = tools;
 ---
 
 <Layout
@@ -50,15 +64,15 @@ import Layout from '../layouts/Layout.astro';
                             Available now
                         </p>
                         <h2 class="mt-2 font-display text-2xl font-semibold text-slate-900">
-                            Sun Angle Compass
+                            {featuredTool.title}
                         </h2>
                         <p class="mt-2 text-slate-600">
-                            Track the sun's azimuth, elevation, and today's insolation curve.
+                            {featuredTool.description}
                         </p>
                     </div>
                     <a
                         class="group inline-flex items-center justify-center rounded-full bg-brand px-6 py-3 text-sm font-semibold text-slate-900 transition hover:-translate-y-0.5 hover:bg-brand-dark"
-                        href="/tools/sun-angle-compass"
+                        href={featuredTool.href}
                     >
                         Open tool
                         <span class="ml-2 text-lg transition group-hover:translate-x-1">→</span>
@@ -70,15 +84,15 @@ import Layout from '../layouts/Layout.astro';
                 >
                     <div>
                         <h2 class="font-display text-2xl font-semibold text-slate-900">
-                            Random Picker
+                            {secondaryTool.title}
                         </h2>
                         <p class="mt-2 text-slate-600">
-                            Can't decide? Input your options and let the dice decide for you.
+                            {secondaryTool.description}
                         </p>
                     </div>
                     <a
                         class="group inline-flex items-center justify-center rounded-full bg-white border border-slate-200 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-brand-dark hover:text-brand-dark"
-                        href="/tools/random-picker"
+                        href={secondaryTool.href}
                     >
                         Open tool
                         <span class="ml-2 text-lg transition group-hover:translate-x-1">→</span>
@@ -111,5 +125,99 @@ import Layout from '../layouts/Layout.astro';
                 </div>
             </div>
         </section>
+
+        <section class="relative mx-auto max-w-6xl px-6 pb-24">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p class="text-sm font-semibold uppercase tracking-[0.3em] text-brand-dark">
+                        Browse the catalog
+                    </p>
+                    <h2 class="mt-2 font-display text-3xl font-semibold text-slate-900 sm:text-4xl">
+                        Find the right tool
+                    </h2>
+                </div>
+                <div class="flex flex-col gap-2 sm:items-end">
+                    <label class="sr-only" for="tool-search">Search tools</label>
+                    <input
+                        id="tool-search"
+                        name="tool-search"
+                        type="search"
+                        placeholder="Search tools by name"
+                        class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.6)] outline-none ring-brand/30 transition focus:border-brand focus:ring-4 sm:w-72"
+                    />
+                    <div class="flex items-center gap-3 text-sm text-slate-600">
+                        <span>
+                            <span class="font-semibold text-slate-900" id="visible-count">
+                                {tools.length}
+                            </span>
+                            visible
+                        </span>
+                        <span aria-hidden="true">•</span>
+                        <span>
+                            <span class="font-semibold text-slate-900" id="total-count">
+                                {tools.length}
+                            </span>
+                            total
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 grid gap-4 sm:grid-cols-2" id="tool-list">
+                {
+                    tools.map((tool) => (
+                        <a
+                            class="group rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_30px_80px_-60px_rgba(15,23,42,0.6)] transition hover:-translate-y-1 hover:border-brand-dark/60"
+                            href={tool.href}
+                            data-tool-name={tool.title}
+                        >
+                            <div class="flex items-center justify-between gap-4">
+                                <div>
+                                    <h3 class="font-display text-xl font-semibold text-slate-900">
+                                        {tool.title}
+                                    </h3>
+                                    <p class="mt-2 text-sm text-slate-600">{tool.description}</p>
+                                </div>
+                                <span
+                                    class="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-lg font-semibold text-slate-900 transition group-hover:translate-x-1 group-hover:bg-brand-dark"
+                                    aria-hidden="true"
+                                >
+                                    →
+                                </span>
+                            </div>
+                        </a>
+                    ))
+                }
+            </div>
+        </section>
+
+        <script>
+            const searchInput = document.querySelector('#tool-search');
+            const cards = Array.from(document.querySelectorAll('[data-tool-name]'));
+            const visibleCountEl = document.getElementById('visible-count');
+            const totalCountEl = document.getElementById('total-count');
+
+            if (totalCountEl) {
+                totalCountEl.textContent = cards.length.toString();
+            }
+
+            const applySearch = () => {
+                if (!searchInput || !visibleCountEl) return;
+                const query = searchInput.value.trim().toLowerCase();
+                let visible = 0;
+
+                cards.forEach((card) => {
+                    const name = card.dataset.toolName?.toLowerCase() ?? '';
+                    const matches = name.includes(query);
+                    card.classList.toggle('hidden', !matches);
+                    if (matches) visible += 1;
+                });
+
+                visibleCountEl.textContent = visible.toString();
+            };
+
+            searchInput?.addEventListener('input', applySearch);
+            applySearch();
+        </script>
     </main>
 </Layout>
