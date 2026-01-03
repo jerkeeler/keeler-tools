@@ -376,7 +376,7 @@ import ToolHeader from '../../components/ToolHeader.astro';
 
         const yTicks = 4;
         ctx.fillStyle = '#64748b';
-        ctx.font = '11px "IBM Plex Sans"';
+        ctx.font = '11px system-ui';
         for (let i = 0; i <= yTicks; i += 1) {
             const value = (maxValue * i) / yTicks;
             const y = height - padding - (chartHeight * i) / yTicks;
@@ -431,7 +431,7 @@ import ToolHeader from '../../components/ToolHeader.astro';
         ctx.setLineDash([]);
 
         ctx.fillStyle = '#0f172a';
-        ctx.font = '12px "IBM Plex Sans"';
+        ctx.font = '12px system-ui';
         ctx.fillText('0h', padding, height - 6);
         ctx.fillText('12h', padding + chartWidth / 2 - 8, height - 6);
         ctx.fillText('24h', width - padding - 18, height - 6);
