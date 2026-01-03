@@ -2,6 +2,8 @@
 
 Small browser-only tools that live at tools.keeler.dev. This repo is a playground for vibe coding and AI-assisted development in a fun, exploratory way.
 
+**Inspired by [Simon Willison's tools](https://tools.simonwillison.net/)** — a collection of beautifully simple, focused browser utilities.
+
 ## Project structure
 
 - `src/pages/index.astro` is the hand-edited tool index.
