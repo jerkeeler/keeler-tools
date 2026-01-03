@@ -3,6 +3,9 @@ import '../styles/global.css';
 
 const { title = 'Keeler Tools', description = 'Tiny browser tools for curious people.' } =
     Astro.props;
+
+const siteUrl = 'https://tools.keeler.dev';
+const currentUrl = new URL(Astro.url.pathname, siteUrl).toString();
 ---
 
 <!doctype html>
@@ -13,6 +16,41 @@ const { title = 'Keeler Tools', description = 'Tiny browser tools for curious pe
         <meta name="description" content={description} />
         <meta name="generator" content={Astro.generator} />
         <title>{title}</title>
+
+        <!-- Theme Color -->
+        <meta name="theme-color" content="#24d1f8" />
+
+        <!-- Favicons -->
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
+
+        <!-- Open Graph -->
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={currentUrl} />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:site_name" content="Keeler Tools" />
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
+        <!-- Privacy-friendly analytics by Plausible -->
+        <script async src="https://plausible.io/js/pa-okMc6bM5PAU143FpapTLS.js"></script>
+        <script>
+            ((window.plausible =
+                window.plausible ||
+                function () {
+                    (plausible.q = plausible.q || []).push(arguments);
+                }),
+                (plausible.init =
+                    plausible.init ||
+                    function (i) {
+                        plausible.o = i || {};
+                    }));
+            plausible.init();
+        </script>
     </head>
     <body class="min-h-screen bg-background text-slate-900">
         <div class="flex min-h-screen flex-col">
