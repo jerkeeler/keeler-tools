@@ -27,6 +27,16 @@ This repo powers tools.keeler.dev. Each tool is a single Astro page that runs en
 5. Update `public/manifest.json`:
     - Add a shortcut entry for the new tool with its description
 
+## Making changes
+
+When making any significant change to the site (new tools, new pages, content updates):
+
+1. Update `public/sw.js`:
+    - Increment `CACHE_VERSION` (e.g., 'v2' → 'v3')
+    - Add any new URLs to `PRECACHE_URLS` array if they should be available offline
+
+This ensures users get the latest version and new content works offline.
+
 ## Formatting
 
 - Prettier runs on commit via Husky: `npm run format:check`.
