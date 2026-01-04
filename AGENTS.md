@@ -22,6 +22,11 @@ This repo powers tools.keeler.dev. Each tool is a single Astro page that runs en
 1. Create a new page in `src/pages/tools/your-tool.astro`.
 2. Add a card/link to the list in `src/pages/index.astro`.
 3. Keep the tool self-contained with vanilla JS and small browser libraries only.
+4. Update `public/sw.js`:
+    - Increment `CACHE_VERSION` (e.g., 'v1' → 'v2')
+    - Add the new tool URL to `PRECACHE_URLS` array
+5. Update `public/manifest.json`:
+    - Add a shortcut entry for the new tool with its description
 
 ## Formatting
 

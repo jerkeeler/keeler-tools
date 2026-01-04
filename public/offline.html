@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Offline - Keeler Tools</title>
+        <meta name="theme-color" content="#24d1f8" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+                    Cantarell, sans-serif;
+                background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 1.5rem;
+                color: #1e293b;
+            }
+
+            .container {
+                max-width: 500px;
+                background: white;
+                border-radius: 1.5rem;
+                padding: 3rem 2rem;
+                box-shadow: 0 20px 60px -20px rgba(15, 23, 42, 0.15);
+                text-align: center;
+            }
+
+            .icon {
+                width: 80px;
+                height: 80px;
+                margin: 0 auto 1.5rem;
+                background: #24d1f8;
+                border-radius: 1rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 2.5rem;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+                font-weight: 700;
+                margin-bottom: 0.75rem;
+                color: #0f172a;
+            }
+
+            p {
+                font-size: 1rem;
+                line-height: 1.6;
+                color: #64748b;
+                margin-bottom: 2rem;
+            }
+
+            .tools-list {
+                background: #f8fafc;
+                border-radius: 1rem;
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+                text-align: left;
+            }
+
+            .tools-list h2 {
+                font-size: 0.875rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #475569;
+                margin-bottom: 1rem;
+            }
+
+            .tool-link {
+                display: block;
+                padding: 0.75rem 1rem;
+                background: white;
+                border-radius: 0.5rem;
+                margin-bottom: 0.5rem;
+                text-decoration: none;
+                color: #0f172a;
+                font-weight: 500;
+                transition: all 0.2s;
+                border: 1px solid #e2e8f0;
+            }
+
+            .tool-link:hover {
+                background: #24d1f8;
+                border-color: #24d1f8;
+                transform: translateY(-2px);
+            }
+
+            .tool-link:last-child {
+                margin-bottom: 0;
+            }
+
+            .btn {
+                display: inline-block;
+                padding: 0.75rem 1.5rem;
+                background: #24d1f8;
+                color: #0f172a;
+                text-decoration: none;
+                border-radius: 0.5rem;
+                font-weight: 600;
+                transition: all 0.2s;
+            }
+
+            .btn:hover {
+                background: #1db8e0;
+                transform: translateY(-2px);
+            }
+
+            .offline-indicator {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-size: 0.875rem;
+                color: #64748b;
+                margin-top: 1.5rem;
+            }
+
+            .offline-dot {
+                width: 8px;
+                height: 8px;
+                background: #ef4444;
+                border-radius: 50%;
+                animation: pulse 2s ease-in-out infinite;
+            }
+
+            @keyframes pulse {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.5;
+                }
+            }
+
+            @media (max-width: 640px) {
+                .container {
+                    padding: 2rem 1.5rem;
+                }
+
+                h1 {
+                    font-size: 1.5rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="icon">📡</div>
+            <h1>You're Offline</h1>
+            <p>
+                It looks like you're not connected to the internet right now. But don't worry - your
+                cached tools are still available!
+            </p>
+
+            <div class="tools-list">
+                <h2>Available Tools</h2>
+                <a href="/" class="tool-link">🏠 Home</a>
+                <a href="/tools/random-picker/" class="tool-link">🎲 Random Picker</a>
+                <a href="/tools/sun-angle-compass/" class="tool-link">☀️ Sun Angle Compass</a>
+                <a href="/learnings/" class="tool-link">📚 Learnings</a>
+            </div>
+
+            <a href="/" class="btn">Go to Home</a>
+
+            <div class="offline-indicator">
+                <span class="offline-dot"></span>
+                <span>No internet connection</span>
+            </div>
+        </div>
+
+        <script>
+            // Auto-reload when back online
+            window.addEventListener('online', () => {
+                location.reload();
+            });
+
+            // Update indicator when connection status changes
+            function updateStatus() {
+                const indicator = document.querySelector('.offline-indicator span:last-child');
+                if (navigator.onLine) {
+                    indicator.textContent = 'Back online!';
+                    setTimeout(() => location.reload(), 1000);
+                }
+            }
+
+            window.addEventListener('online', updateStatus);
+            window.addEventListener('offline', updateStatus);
+        </script>
+    </body>
+</html>
