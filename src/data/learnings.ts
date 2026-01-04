@@ -7,6 +7,13 @@ export interface Learning {
 
 export const learnings: Learning[] = [
     {
+        id: 'ai-performance-blind-spots',
+        date: '2026-01-04',
+        title: "AI Doesn't Understand Performance (Yet)",
+        description:
+            "The initial version of this site had gorgeous, dreamy blur effects—massive 120px CSS blurs layered on top of each other. Looked stunning in Chrome. In Safari? Completely unusable. The AI optimized for aesthetics without considering cross-browser performance implications. It's not even a design choice I would have made myself, but when you're pair-programming with AI, you're living in its world. Lesson learned: always test in Safari before shipping.",
+    },
+    {
         id: 'pwa-implementation',
         date: '2026-01-04',
         title: 'Progressive Web Apps for Browser-Only Tools',
