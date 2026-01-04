@@ -1,6 +1,4 @@
 ---
-import '../styles/global.css';
-
 const { title = 'Keeler Tools', description = 'Tiny browser tools for curious people.' } =
     Astro.props;
 
@@ -16,6 +14,27 @@ const currentUrl = new URL(Astro.url.pathname, siteUrl).toString();
         <meta name="description" content={description} />
         <meta name="generator" content={Astro.generator} />
         <title>{title}</title>
+
+        <!-- Inlined critical CSS for performance -->
+        <style is:global>
+            @import 'tailwindcss';
+
+            @theme {
+                --color-brand: #24d1f8;
+                --color-brand-dark: #1b96b4;
+                --color-background: #f7fbff;
+
+                --color-accent: var(--color-brand);
+            }
+
+            root {
+                color-scheme: light;
+            }
+
+            body {
+                font-family: system-ui, sans-serif;
+            }
+        </style>
 
         <!-- Theme Color -->
         <meta name="theme-color" content="#24d1f8" />

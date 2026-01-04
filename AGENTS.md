@@ -13,8 +13,7 @@ This repo powers tools.keeler.dev. Each tool is a single Astro page that runs en
 
 - `src/pages/index.astro` is the hand-edited tool index.
 - `src/pages/tools/` holds one page per tool, isolated and browser-only.
-- `src/layouts/Layout.astro` is the shared layout and metadata.
-- `src/styles/global.css` defines global Tailwind layers and base styles.
+- `src/layouts/Layout.astro` is the shared layout and metadata (includes inlined critical CSS).
 - `tailwind.config.mjs` contains theme tokens (brand colors, fonts).
 
 ## Adding a new tool

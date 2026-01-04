@@ -1,12 +1,13 @@
 // Service Worker for Keeler Tools PWA
-// Version: 1.0.0
+// Version: 1.1.0
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `keeler-tools-${CACHE_VERSION}`;
 const OFFLINE_PAGE = '/offline.html';
 
 // Assets to pre-cache on install
-// Note: CSS and JS files in /_astro/ will be cached at runtime on first request
+// Note: JS files in /_astro/ will be cached at runtime on first request
+// CSS is now inlined in HTML for better performance
 const PRECACHE_URLS = [
     '/',
     '/learnings/',
