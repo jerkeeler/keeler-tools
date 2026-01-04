@@ -3,8 +3,16 @@ const { title, description, tag } = Astro.props;
 ---
 
 <header class="relative overflow-hidden border-b border-slate-200">
-    <div class="absolute -left-16 top-10 h-40 w-40 rounded-full bg-brand/30 blur-[90px]"></div>
-    <div class="absolute right-10 top-6 h-32 w-32 rounded-full bg-brand-dark/30 blur-[80px]"></div>
+    <div
+        class="pointer-events-none absolute -left-16 top-10 h-40 w-40 rounded-full bg-[radial-gradient(circle,rgba(36,209,248,0.25)_0%,transparent_70%)]"
+        aria-hidden="true"
+    >
+    </div>
+    <div
+        class="pointer-events-none absolute right-10 top-6 h-32 w-32 rounded-full bg-[radial-gradient(circle,rgba(27,150,180,0.25)_0%,transparent_70%)]"
+        aria-hidden="true"
+    >
+    </div>
 
     <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-10">
         <div>

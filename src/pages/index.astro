@@ -13,15 +13,17 @@ const sortedTools = [...tools].sort(
     description="Browser-native utilities built for small daily curiosities."
 >
     <main class="relative overflow-hidden">
-        <div class="absolute inset-0">
-            <div class="absolute -left-20 top-16 h-80 w-80 rounded-full bg-brand/20 blur-[120px]">
-            </div>
+        <div class="pointer-events-none absolute inset-0" aria-hidden="true">
             <div
-                class="absolute right-10 top-0 h-64 w-64 rounded-full bg-brand-dark/20 blur-[110px]"
+                class="absolute -left-20 top-16 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(36,209,248,0.15)_0%,transparent_70%)]"
             >
             </div>
             <div
-                class="absolute bottom-[-10%] left-[40%] h-72 w-72 rounded-full bg-sky-200/40 blur-[120px]"
+                class="absolute right-10 top-0 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(27,150,180,0.15)_0%,transparent_70%)]"
+            >
+            </div>
+            <div
+                class="absolute bottom-[-10%] left-[40%] h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(186,230,254,0.3)_0%,transparent_70%)]"
             >
             </div>
         </div>
@@ -43,11 +45,10 @@ const sortedTools = [...tools].sort(
                 </p>
                 <div class="mt-4">
                     <a
-                        class="inline-flex items-center gap-2 text-sm font-semibold text-brand-dark underline underline-offset-4 transition hover:text-brand"
+                        class="text-sm font-semibold text-brand-dark underline underline-offset-4 transition hover:text-brand"
                         href="/learnings"
                     >
-                        Read about what I've learned building this
-                        <span aria-hidden="true">→</span>
+                        Read about what I've learned building this →
                     </a>
                 </div>
             </div>

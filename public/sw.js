@@ -1,7 +1,7 @@
 // Service Worker for Keeler Tools PWA
 // Version: 1.1.0
 
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_NAME = `keeler-tools-${CACHE_VERSION}`;
 const OFFLINE_PAGE = '/offline.html';
 
