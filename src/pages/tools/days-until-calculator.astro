@@ -1,0 +1,342 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ToolHeader from '../../components/ToolHeader.astro';
+---
+
+<Layout
+    title="Days Until Calculator | Keeler Tools"
+    description="Count down to important dates. See days, weeks, and months until any future date."
+>
+    <ToolHeader
+        title="Days Until Calculator"
+        description="Pick a date, add an optional label, and see exactly how long until it arrives."
+        tag="Utility"
+    />
+
+    <main class="mx-auto max-w-4xl px-6 py-12">
+        <!-- Main Card -->
+        <div
+            class="relative w-full overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50 sm:p-10"
+        >
+            <!-- Background Decoration -->
+            <div
+                class="pointer-events-none absolute -right-20 top-20 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(36,209,248,0.1)_0%,transparent_70%)]"
+                aria-hidden="true"
+            >
+            </div>
+
+            <!-- Input Area -->
+            <div class="mb-8 grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label for="date-input" class="mb-2 block text-sm font-medium text-slate-700">
+                        Select Date
+                    </label>
+                    <input
+                        type="date"
+                        id="date-input"
+                        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                    />
+                </div>
+                <div>
+                    <label for="label-input" class="mb-2 block text-sm font-medium text-slate-700">
+                        Label <span class="text-slate-400">(optional)</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="label-input"
+                        placeholder="e.g., Birthday, Vacation"
+                        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                    />
+                </div>
+            </div>
+
+            <button
+                id="calculate-btn"
+                class="mb-8 w-full rounded-xl bg-brand px-6 py-4 text-lg font-bold text-slate-900 transition-all hover:-translate-y-0.5 hover:bg-brand-dark disabled:opacity-50 disabled:hover:translate-y-0"
+            >
+                Calculate
+            </button>
+
+            <!-- Results Area -->
+            <div
+                id="results-container"
+                class="hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-6 sm:p-8"
+            >
+                <div id="result-label" class="mb-4 hidden text-center">
+                    <span
+                        class="inline-block rounded-full bg-brand/20 px-4 py-1 text-sm font-semibold text-brand-dark"
+                    >
+                    </span>
+                </div>
+                <div id="result-date" class="mb-6 text-center text-lg text-slate-600"></div>
+                <div class="grid gap-4 sm:grid-cols-3">
+                    <div class="rounded-xl bg-white p-4 text-center shadow-sm">
+                        <div
+                            id="result-days"
+                            class="font-display text-4xl font-bold text-brand-dark"
+                        >
+                            --
+                        </div>
+                        <div class="mt-1 text-sm text-slate-500">Days</div>
+                    </div>
+                    <div class="rounded-xl bg-white p-4 text-center shadow-sm">
+                        <div
+                            id="result-weeks"
+                            class="font-display text-4xl font-bold text-slate-700"
+                        >
+                            --
+                        </div>
+                        <div class="mt-1 text-sm text-slate-500">Weeks</div>
+                    </div>
+                    <div class="rounded-xl bg-white p-4 text-center shadow-sm">
+                        <div
+                            id="result-months"
+                            class="font-display text-4xl font-bold text-slate-700"
+                        >
+                            --
+                        </div>
+                        <div class="mt-1 text-sm text-slate-500">Months</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Dates Section -->
+        <div id="recent-section" class="mt-8 hidden">
+            <h2 class="mb-4 font-display text-xl font-semibold text-slate-900">Recent Dates</h2>
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <ul id="recent-list" class="divide-y divide-slate-100">
+                    <!-- Recent dates will be injected here -->
+                </ul>
+            </div>
+        </div>
+    </main>
+</Layout>
+
+<script>
+    interface SavedDate {
+        date: string;
+        label?: string;
+        savedAt: number;
+    }
+
+    const STORAGE_KEY = 'keeler-days-until-dates';
+    const MAX_SAVED = 20;
+
+    // DOM Elements
+    const dateInput = document.getElementById('date-input') as HTMLInputElement;
+    const labelInput = document.getElementById('label-input') as HTMLInputElement;
+    const calculateBtn = document.getElementById('calculate-btn') as HTMLButtonElement;
+    const resultsContainer = document.getElementById('results-container') as HTMLDivElement;
+    const resultLabel = document.getElementById('result-label') as HTMLDivElement;
+    const resultDate = document.getElementById('result-date') as HTMLDivElement;
+    const resultDays = document.getElementById('result-days') as HTMLDivElement;
+    const resultWeeks = document.getElementById('result-weeks') as HTMLDivElement;
+    const resultMonths = document.getElementById('result-months') as HTMLDivElement;
+    const recentSection = document.getElementById('recent-section') as HTMLDivElement;
+    const recentList = document.getElementById('recent-list') as HTMLUListElement;
+
+    // Set minimum date to today
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    dateInput.min = todayStr;
+
+    // Load saved dates
+    let savedDates: SavedDate[] = loadSavedDates();
+    renderRecentDates();
+
+    // Event Listeners
+    calculateBtn.addEventListener('click', calculate);
+    dateInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') calculate();
+    });
+    labelInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') calculate();
+    });
+
+    function calculate() {
+        const dateValue = dateInput.value;
+        if (!dateValue) {
+            dateInput.focus();
+            return;
+        }
+
+        const label = labelInput.value.trim() || undefined;
+        const targetDate = new Date(dateValue + 'T00:00:00');
+
+        // Calculate differences
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+
+        const diffTime = targetDate.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffWeeks = (diffDays / 7).toFixed(1);
+        const diffMonths = (diffDays / 30.44).toFixed(1);
+
+        // Display results
+        displayResults(targetDate, diffDays, diffWeeks, diffMonths, label);
+
+        // Save the date
+        saveDate(dateValue, label);
+        renderRecentDates();
+    }
+
+    function displayResults(
+        date: Date,
+        days: number,
+        weeks: string,
+        months: string,
+        label?: string
+    ) {
+        resultsContainer.classList.remove('hidden');
+        resultsContainer.classList.remove('border-dashed', 'border-slate-200', 'bg-slate-50');
+        resultsContainer.classList.add('border-solid', 'border-brand', 'bg-white');
+
+        // Format the date nicely
+        const formattedDate = date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        });
+
+        resultDate.textContent = formattedDate;
+
+        // Show label if present
+        if (label) {
+            resultLabel.classList.remove('hidden');
+            resultLabel.querySelector('span')!.textContent = label;
+        } else {
+            resultLabel.classList.add('hidden');
+        }
+
+        // Handle past dates, today, and future dates
+        if (days < 0) {
+            resultDays.textContent = Math.abs(days).toString();
+            resultDays.parentElement!.querySelector('.text-slate-500')!.textContent = 'Days Ago';
+            resultWeeks.textContent = Math.abs(parseFloat(weeks)).toFixed(1);
+            resultWeeks.parentElement!.querySelector('.text-slate-500')!.textContent = 'Weeks Ago';
+            resultMonths.textContent = Math.abs(parseFloat(months)).toFixed(1);
+            resultMonths.parentElement!.querySelector('.text-slate-500')!.textContent =
+                'Months Ago';
+        } else if (days === 0) {
+            resultDays.textContent = 'Today!';
+            resultDays.parentElement!.querySelector('.text-slate-500')!.textContent = '';
+            resultWeeks.textContent = '0';
+            resultWeeks.parentElement!.querySelector('.text-slate-500')!.textContent = 'Weeks';
+            resultMonths.textContent = '0';
+            resultMonths.parentElement!.querySelector('.text-slate-500')!.textContent = 'Months';
+        } else {
+            resultDays.textContent = days.toString();
+            resultDays.parentElement!.querySelector('.text-slate-500')!.textContent = 'Days';
+            resultWeeks.textContent = weeks;
+            resultWeeks.parentElement!.querySelector('.text-slate-500')!.textContent = 'Weeks';
+            resultMonths.textContent = months;
+            resultMonths.parentElement!.querySelector('.text-slate-500')!.textContent = 'Months';
+        }
+    }
+
+    function loadSavedDates(): SavedDate[] {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                return JSON.parse(saved);
+            }
+        } catch (e) {
+            console.error('Failed to load saved dates:', e);
+        }
+        return [];
+    }
+
+    function saveDate(date: string, label?: string) {
+        // Check if this date already exists
+        const existingIndex = savedDates.findIndex((d) => d.date === date);
+
+        if (existingIndex !== -1) {
+            // Update existing entry
+            savedDates[existingIndex].label = label;
+            savedDates[existingIndex].savedAt = Date.now();
+        } else {
+            // Add new entry
+            savedDates.unshift({
+                date,
+                label,
+                savedAt: Date.now(),
+            });
+        }
+
+        // Sort by savedAt (newest first)
+        savedDates.sort((a, b) => b.savedAt - a.savedAt);
+
+        // Evict oldest if over limit
+        if (savedDates.length > MAX_SAVED) {
+            savedDates = savedDates.slice(0, MAX_SAVED);
+        }
+
+        // Persist to localStorage
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(savedDates));
+        } catch (e) {
+            console.error('Failed to save dates:', e);
+        }
+    }
+
+    function renderRecentDates() {
+        if (savedDates.length === 0) {
+            recentSection.classList.add('hidden');
+            return;
+        }
+
+        recentSection.classList.remove('hidden');
+        recentList.innerHTML = '';
+
+        savedDates.forEach((saved) => {
+            const date = new Date(saved.date + 'T00:00:00');
+            const formattedDate = date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+            });
+
+            const li = document.createElement('li');
+            li.className =
+                'flex cursor-pointer items-center justify-between gap-4 py-3 transition hover:bg-slate-50 -mx-2 px-2 rounded-lg';
+
+            const leftDiv = document.createElement('div');
+            leftDiv.className = 'min-w-0 flex-1';
+
+            const dateSpan = document.createElement('span');
+            dateSpan.className = 'block font-medium text-slate-900';
+            dateSpan.textContent = formattedDate;
+            leftDiv.appendChild(dateSpan);
+
+            if (saved.label) {
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'block text-sm text-slate-500';
+                labelSpan.textContent = saved.label;
+                leftDiv.appendChild(labelSpan);
+            }
+
+            const arrowSpan = document.createElement('span');
+            arrowSpan.className = 'flex-shrink-0 text-slate-400';
+            arrowSpan.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                </svg>
+            `;
+
+            li.appendChild(leftDiv);
+            li.appendChild(arrowSpan);
+
+            li.addEventListener('click', () => {
+                dateInput.value = saved.date;
+                labelInput.value = saved.label || '';
+                calculate();
+                // Scroll to top smoothly
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            recentList.appendChild(li);
+        });
+    }
+</script>

@@ -21,4 +21,11 @@ export const tools: Tool[] = [
         path: '/tools/random-picker',
         createdAt: '2026-01-03T14:44:14-05:00',
     },
+    {
+        id: 'days-until-calculator',
+        title: 'Days Until Calculator',
+        description: 'Count down to important dates with days, weeks, and months.',
+        path: '/tools/days-until-calculator',
+        createdAt: '2026-01-05T10:00:00-05:00',
+    },
 ];
