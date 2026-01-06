@@ -7,6 +7,13 @@ export interface Learning {
 
 export const learnings: Learning[] = [
     {
+        id: 'mobile-ai-development',
+        date: '2026-01-05',
+        title: 'AI Development From Anywhere',
+        description:
+            "There's something magical about having an idea while out and about, kicking off Claude Code from my phone, and picking up where I left off later. The friction between thought and implementation has never been lower. Now I'm wondering: do I want to set this up on my Mac mini server and really lean into the remote development workflow? The rabbit hole beckons.",
+    },
+    {
         id: 'ai-performance-blind-spots',
         date: '2026-01-04',
         title: "AI Doesn't Understand Performance (Yet)",
