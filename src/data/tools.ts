@@ -4,6 +4,7 @@ export interface Tool {
     description: string;
     path: string;
     createdAt: string;
+    emoji: string;
 }
 
 export const tools: Tool[] = [
@@ -13,6 +14,7 @@ export const tools: Tool[] = [
         description: "Track the sun's azimuth, elevation, and today's insolation curve.",
         path: '/tools/sun-angle-compass',
         createdAt: '2026-01-03T13:17:21-05:00',
+        emoji: '☀️',
     },
     {
         id: 'random-picker',
@@ -20,6 +22,7 @@ export const tools: Tool[] = [
         description: "Can't decide? Input your options and let the dice decide for you.",
         path: '/tools/random-picker',
         createdAt: '2026-01-03T14:44:14-05:00',
+        emoji: '🎲',
     },
     {
         id: 'days-until-calculator',
@@ -27,5 +30,6 @@ export const tools: Tool[] = [
         description: 'Count down to important dates with days, weeks, and months.',
         path: '/tools/days-until-calculator',
         createdAt: '2026-01-05T10:00:00-05:00',
+        emoji: '📅',
     },
 ];

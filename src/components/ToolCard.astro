@@ -8,27 +8,24 @@ interface Props {
 const { tool } = Astro.props;
 ---
 
-<article
-    class="tool-card rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_40px_90px_-70px_rgba(15,23,42,0.4)] transition hover:-translate-y-1 hover:border-brand-dark/30"
+<a
+    href={tool.path}
+    class="tool-card group block rounded-xl border border-slate-200/60 bg-white/60 p-4 shadow-sm backdrop-blur-sm transition hover:scale-[1.03] hover:border-brand/50 hover:bg-white/90 hover:shadow-md"
     data-tool-id={tool.id}
     data-tool-title={tool.title.toLowerCase()}
     data-tool-description={tool.description.toLowerCase()}
 >
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div class="flex-1">
-            <h2 class="font-display text-2xl font-semibold text-slate-900">
+    <div class="flex items-start gap-3">
+        <span class="text-2xl" aria-hidden="true">{tool.emoji}</span>
+        <div class="flex-1 min-w-0">
+            <h2
+                class="font-display text-base font-semibold text-slate-900 transition group-hover:text-brand-dark"
+            >
                 {tool.title}
             </h2>
-            <p class="mt-2 text-slate-600">
+            <p class="mt-1 text-xs leading-relaxed text-slate-600">
                 {tool.description}
             </p>
         </div>
-        <a
-            class="group inline-flex items-center justify-center rounded-full bg-brand px-6 py-3 text-sm font-semibold text-slate-900 transition hover:-translate-y-0.5 hover:bg-brand-dark"
-            href={tool.path}
-        >
-            Open tool
-            <span class="ml-2 text-lg transition group-hover:translate-x-1">→</span>
-        </a>
     </div>
-</article>
+</a>

@@ -15,101 +15,108 @@ const sortedTools = [...tools].sort(
     <main class="relative overflow-hidden">
         <div class="pointer-events-none absolute inset-0" aria-hidden="true">
             <div
-                class="absolute -left-20 top-16 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(36,209,248,0.15)_0%,transparent_70%)]"
+                class="absolute -left-16 top-12 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(36,209,248,0.12)_0%,transparent_70%)]"
             >
             </div>
             <div
-                class="absolute right-10 top-0 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(27,150,180,0.15)_0%,transparent_70%)]"
+                class="absolute right-8 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(27,150,180,0.12)_0%,transparent_70%)]"
             >
             </div>
             <div
-                class="absolute bottom-[-10%] left-[40%] h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(186,230,254,0.3)_0%,transparent_70%)]"
+                class="absolute bottom-[-5%] left-[40%] h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(186,230,254,0.25)_0%,transparent_70%)]"
             >
             </div>
         </div>
 
-        <section
-            class="relative mx-auto flex min-h-[70vh] max-w-6xl flex-col justify-center gap-10 px-6 py-24"
-        >
-            <div class="max-w-2xl">
-                <p class="text-sm font-semibold uppercase tracking-[0.3em] text-brand-dark">
-                    Tools.keeler.dev
-                </p>
-                <h1
-                    class="mt-4 font-display text-4xl font-semibold leading-tight text-slate-900 sm:text-6xl"
-                >
-                    Tiny tools with a clear purpose and a little bit of wonder.
-                </h1>
-                <p class="mt-4 text-lg text-slate-700">
-                    Browser-only tools built with AI for fun and learning.
-                </p>
-                <div class="mt-4">
-                    <a
-                        class="text-sm font-semibold text-brand-dark underline underline-offset-4 transition hover:text-brand"
-                        href="/learnings"
+        <section class="relative mx-auto flex max-w-6xl flex-col gap-6 px-4 py-16 md:py-20">
+            <!-- Hero + Search (side by side on desktop) -->
+            <div class="flex flex-col gap-6 md:flex-row md:items-start md:justify-between md:gap-8">
+                <div class="max-w-xl">
+                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-dark">
+                        Tools.keeler.dev
+                    </p>
+                    <h1
+                        class="mt-3 font-display text-4xl font-semibold leading-[1.15] text-slate-900 sm:text-5xl"
                     >
-                        Read about what I've learned building this →
-                    </a>
+                        Tiny tools with a clear purpose and a little bit of wonder.
+                    </h1>
+                    <p class="mt-3 text-base text-slate-700">
+                        Browser-only tools built with AI for fun and learning.
+                    </p>
+                    <div class="mt-3">
+                        <a
+                            class="text-sm font-semibold text-brand-dark underline decoration-brand-dark/30 underline-offset-4 transition hover:text-brand hover:decoration-brand"
+                            href="/learnings"
+                        >
+                            Read about what I've learned building this →
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Search Input -->
+                <div class="md:w-80 md:pt-2">
+                    <label for="tool-search" class="sr-only">Search tools</label>
+                    <input
+                        type="text"
+                        id="tool-search"
+                        placeholder="Search tools..."
+                        class="w-full rounded-full border border-slate-200/80 bg-white/80 px-5 py-2.5 text-sm text-slate-900 shadow-sm backdrop-blur-sm transition focus:border-brand focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/20"
+                    />
                 </div>
             </div>
 
-            <!-- Search Input -->
-            <div class="mb-6">
-                <label for="tool-search" class="sr-only">Search tools</label>
-                <input
-                    type="text"
-                    id="tool-search"
-                    placeholder="Search tools..."
-                    class="w-full rounded-full border border-slate-200 bg-white px-6 py-3 text-slate-900 shadow-sm transition focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
-                />
-            </div>
-
             <!-- Tool Grid -->
-            <div id="tool-grid" class="grid gap-6 sm:grid-cols-2">
+            <div id="tool-grid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {sortedTools.map((tool) => <ToolCard tool={tool} />)}
             </div>
 
             <!-- Empty State -->
             <div
                 id="empty-state"
-                class="hidden rounded-3xl border border-slate-200 bg-white p-12 text-center shadow-sm"
+                class="hidden rounded-3xl border border-slate-200/80 bg-white/80 p-12 text-center shadow-sm backdrop-blur-sm"
             >
-                <p class="text-lg text-slate-600">No tools match that criteria</p>
+                <p class="text-base text-slate-600">No tools match that criteria</p>
             </div>
         </section>
 
-        <section class="relative mx-auto max-w-6xl px-6 pb-24">
-            <div class="grid gap-6 sm:grid-cols-2">
-                <div
-                    class="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_40px_90px_-70px_rgba(15,23,42,0.4)]"
-                >
-                    <h3 class="font-display text-xl font-semibold text-slate-900">
+        <!-- About Section -->
+        <section class="relative mx-auto max-w-6xl px-4 pb-16 pt-8 md:pb-20 md:pt-12">
+            <div class="mb-6 border-t border-slate-200/50"></div>
+
+            <div class="grid gap-6 sm:grid-cols-3">
+                <div class="space-y-2">
+                    <div class="inline-flex items-center justify-center rounded-lg bg-brand/10 p-2">
+                        <span class="text-xl">🚀</span>
+                    </div>
+                    <h3 class="font-display text-base font-semibold text-slate-900">
                         New drops every two weeks
                     </h3>
-                    <p class="mt-2 text-sm text-slate-600">
+                    <p class="text-xs leading-relaxed text-slate-600">
                         Each tool is intentionally small, focused, and ready to use in the browser.
                     </p>
                 </div>
-                <div
-                    class="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_40px_90px_-70px_rgba(15,23,42,0.4)]"
-                >
-                    <h3 class="font-display text-xl font-semibold text-slate-900">
+                <div class="space-y-2">
+                    <div class="inline-flex items-center justify-center rounded-lg bg-brand/10 p-2">
+                        <span class="text-xl">⚡</span>
+                    </div>
+                    <h3 class="font-display text-base font-semibold text-slate-900">
                         No heavy frameworks
                     </h3>
-                    <p class="mt-2 text-sm text-slate-600">
+                    <p class="text-xs leading-relaxed text-slate-600">
                         Just Astro, Tailwind, and small JavaScript libraries when they add delight.
                     </p>
                 </div>
-                <div
-                    class="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_40px_90px_-70px_rgba(15,23,42,0.4)]"
-                >
-                    <h3 class="font-display text-xl font-semibold text-slate-900">
+                <div class="space-y-2">
+                    <div class="inline-flex items-center justify-center rounded-lg bg-brand/10 p-2">
+                        <span class="text-xl">💡</span>
+                    </div>
+                    <h3 class="font-display text-base font-semibold text-slate-900">
                         Inspired by Simon Willison
                     </h3>
-                    <p class="mt-2 text-sm text-slate-600">
+                    <p class="text-xs leading-relaxed text-slate-600">
                         This project draws inspiration from
                         <a
-                            class="font-semibold text-brand-dark underline underline-offset-2 transition hover:text-brand"
+                            class="font-semibold text-brand-dark underline decoration-brand-dark/30 underline-offset-2 transition hover:text-brand hover:decoration-brand"
                             href="https://tools.simonwillison.net/"
                         >
                             Simon's tools
