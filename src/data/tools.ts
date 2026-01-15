@@ -32,4 +32,12 @@ export const tools: Tool[] = [
         createdAt: '2026-01-05T10:00:00-05:00',
         emoji: '📅',
     },
+    {
+        id: 'qr-code-generator',
+        title: 'QR Code Generator',
+        description: 'Generate QR codes for any URL with a stylish branded logo in the center.',
+        path: '/tools/qr-code-generator',
+        createdAt: '2026-01-15T10:00:00-05:00',
+        emoji: '📱',
+    },
 ];
