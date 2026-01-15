@@ -1,0 +1,1174 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ToolHeader from '../../components/ToolHeader.astro';
+---
+
+<Layout
+    title="QR Code Generator | Keeler Tools"
+    description="Generate QR codes for any URL with a stylish branded logo in the center."
+>
+    <ToolHeader
+        title="QR Code Generator"
+        description="Enter a URL and instantly generate a QR code with the Keeler Tools logo embedded in the center. Perfect for sharing links."
+        tag="Utility"
+    />
+
+    <main class="mx-auto max-w-4xl px-6 py-12">
+        <!-- Main Card -->
+        <div
+            class="relative w-full overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50 sm:p-10"
+        >
+            <!-- Background Decoration -->
+            <div
+                class="pointer-events-none absolute -right-20 top-20 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(36,209,248,0.1)_0%,transparent_70%)]"
+                aria-hidden="true"
+            >
+            </div>
+
+            <!-- QR Code Display Area -->
+            <div class="mb-10 w-full text-center">
+                <div
+                    id="qr-container"
+                    class="mx-auto flex h-80 w-full max-w-sm items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50 p-6 transition-all duration-300"
+                >
+                    <div id="placeholder" class="flex flex-col items-center gap-4">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="h-14 w-14 text-slate-300"
+                        >
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="3" height="3"></rect>
+                            <rect x="18" y="14" width="3" height="3"></rect>
+                            <rect x="14" y="18" width="3" height="3"></rect>
+                            <rect x="18" y="18" width="3" height="3"></rect>
+                        </svg>
+                        <span class="font-display text-xl font-semibold text-slate-400">
+                            Enter a URL to generate
+                        </span>
+                    </div>
+                    <canvas id="qr-canvas" class="hidden max-w-full rounded-xl"></canvas>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="mb-8">
+                <label for="url-input" class="mb-2 block text-sm font-medium text-slate-700">
+                    URL
+                </label>
+                <input
+                    type="url"
+                    id="url-input"
+                    placeholder="https://example.com"
+                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                />
+                <p id="error-message" class="mt-2 hidden text-sm text-red-500">
+                    Please enter a valid URL
+                </p>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex flex-col gap-4 sm:flex-row">
+                <button
+                    id="generate-btn"
+                    class="group flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-lg font-bold text-slate-900 transition-all hover:-translate-y-0.5 hover:bg-brand-dark"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="h-5 w-5"
+                    >
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                        <path d="M14 14h3v3h-3z"></path>
+                        <path d="M18 14h3v3h-3z"></path>
+                        <path d="M14 18h3v3h-3z"></path>
+                        <path d="M18 18h3v3h-3z"></path>
+                    </svg>
+                    Generate QR Code
+                </button>
+                <button
+                    id="download-btn"
+                    class="hidden rounded-xl border border-slate-200 bg-white px-6 py-4 font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                >
+                    Download PNG
+                </button>
+            </div>
+        </div>
+    </main>
+</Layout>
+
+<script>
+    // QR Code Generator - No external dependencies
+    // Implements QR Code generation with byte mode encoding and error correction
+
+    // DOM Elements
+    const urlInput = document.getElementById('url-input') as HTMLInputElement;
+    const generateBtn = document.getElementById('generate-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const qrCanvas = document.getElementById('qr-canvas') as HTMLCanvasElement;
+    const placeholder = document.getElementById('placeholder');
+    const qrContainer = document.getElementById('qr-container');
+    const errorMessage = document.getElementById('error-message');
+
+    // Galois Field arithmetic for Reed-Solomon encoding
+    const GF256 = {
+        exp: new Uint8Array(512),
+        log: new Uint8Array(256),
+        init() {
+            let x = 1;
+            for (let i = 0; i < 255; i++) {
+                this.exp[i] = x;
+                this.log[x] = i;
+                x = x << 1;
+                if (x & 256) x ^= 285; // Primitive polynomial x^8 + x^4 + x^3 + x^2 + 1
+            }
+            for (let i = 255; i < 512; i++) {
+                this.exp[i] = this.exp[i - 255];
+            }
+        },
+        multiply(a: number, b: number): number {
+            if (a === 0 || b === 0) return 0;
+            return this.exp[this.log[a] + this.log[b]];
+        },
+    };
+    GF256.init();
+
+    // Reed-Solomon encoder
+    function rsEncode(data: number[], ecCount: number): number[] {
+        // Generate generator polynomial
+        const gen: number[] = [1];
+        for (let i = 0; i < ecCount; i++) {
+            const newGen: number[] = new Array(gen.length + 1).fill(0);
+            for (let j = 0; j < gen.length; j++) {
+                newGen[j] ^= gen[j];
+                newGen[j + 1] ^= GF256.multiply(gen[j], GF256.exp[i]);
+            }
+            gen.length = 0;
+            gen.push(...newGen);
+        }
+
+        // Compute error correction codewords
+        const msg = [...data, ...new Array(ecCount).fill(0)];
+        for (let i = 0; i < data.length; i++) {
+            const coef = msg[i];
+            if (coef !== 0) {
+                for (let j = 0; j < gen.length; j++) {
+                    msg[i + j] ^= GF256.multiply(gen[j], coef);
+                }
+            }
+        }
+        return msg.slice(data.length);
+    }
+
+    // QR Code version capacities for byte mode with H error correction
+    const VERSION_CAPACITY: { [key: number]: number } = {
+        1: 7,
+        2: 14,
+        3: 24,
+        4: 34,
+        5: 44,
+        6: 58,
+        7: 64,
+        8: 84,
+        9: 98,
+        10: 119,
+        11: 137,
+        12: 155,
+        13: 177,
+        14: 194,
+        15: 220,
+        16: 250,
+        17: 280,
+        18: 310,
+        19: 338,
+        20: 382,
+        21: 403,
+        22: 439,
+        23: 461,
+        24: 511,
+        25: 535,
+        26: 593,
+        27: 625,
+        28: 658,
+        29: 698,
+        30: 742,
+        31: 790,
+        32: 842,
+        33: 898,
+        34: 958,
+        35: 983,
+        36: 1051,
+        37: 1093,
+        38: 1139,
+        39: 1219,
+        40: 1273,
+    };
+
+    // Error correction blocks for H level
+    const EC_BLOCKS: {
+        [key: number]: { ecPerBlock: number; blocks: [number, number][] };
+    } = {
+        1: { ecPerBlock: 17, blocks: [[1, 9]] },
+        2: { ecPerBlock: 28, blocks: [[1, 16]] },
+        3: { ecPerBlock: 22, blocks: [[2, 13]] },
+        4: { ecPerBlock: 16, blocks: [[4, 9]] },
+        5: {
+            ecPerBlock: 22,
+            blocks: [
+                [2, 11],
+                [2, 12],
+            ],
+        },
+        6: {
+            ecPerBlock: 28,
+            blocks: [
+                [2, 12],
+                [2, 13],
+            ],
+        },
+        7: {
+            ecPerBlock: 26,
+            blocks: [
+                [4, 9],
+                [1, 10],
+            ],
+        },
+        8: {
+            ecPerBlock: 26,
+            blocks: [
+                [4, 10],
+                [2, 11],
+            ],
+        },
+        9: {
+            ecPerBlock: 24,
+            blocks: [
+                [4, 12],
+                [4, 13],
+            ],
+        },
+        10: {
+            ecPerBlock: 28,
+            blocks: [
+                [6, 11],
+                [2, 12],
+            ],
+        },
+        11: {
+            ecPerBlock: 24,
+            blocks: [
+                [3, 12],
+                [8, 13],
+            ],
+        },
+        12: {
+            ecPerBlock: 28,
+            blocks: [
+                [7, 11],
+                [4, 12],
+            ],
+        },
+        13: {
+            ecPerBlock: 22,
+            blocks: [
+                [12, 11],
+                [4, 12],
+            ],
+        },
+        14: {
+            ecPerBlock: 24,
+            blocks: [
+                [11, 12],
+                [5, 13],
+            ],
+        },
+        15: {
+            ecPerBlock: 24,
+            blocks: [
+                [11, 12],
+                [7, 13],
+            ],
+        },
+        16: {
+            ecPerBlock: 30,
+            blocks: [
+                [3, 15],
+                [13, 16],
+            ],
+        },
+        17: {
+            ecPerBlock: 28,
+            blocks: [
+                [2, 14],
+                [17, 15],
+            ],
+        },
+        18: {
+            ecPerBlock: 28,
+            blocks: [
+                [2, 14],
+                [19, 15],
+            ],
+        },
+        19: {
+            ecPerBlock: 26,
+            blocks: [
+                [9, 13],
+                [16, 14],
+            ],
+        },
+        20: {
+            ecPerBlock: 28,
+            blocks: [
+                [15, 15],
+                [10, 16],
+            ],
+        },
+        21: {
+            ecPerBlock: 30,
+            blocks: [
+                [19, 16],
+                [6, 17],
+            ],
+        },
+        22: { ecPerBlock: 24, blocks: [[34, 13]] },
+        23: {
+            ecPerBlock: 30,
+            blocks: [
+                [16, 15],
+                [14, 16],
+            ],
+        },
+        24: {
+            ecPerBlock: 30,
+            blocks: [
+                [30, 16],
+                [2, 17],
+            ],
+        },
+        25: {
+            ecPerBlock: 30,
+            blocks: [
+                [22, 15],
+                [13, 16],
+            ],
+        },
+        26: {
+            ecPerBlock: 30,
+            blocks: [
+                [33, 16],
+                [4, 17],
+            ],
+        },
+        27: {
+            ecPerBlock: 30,
+            blocks: [
+                [12, 15],
+                [28, 16],
+            ],
+        },
+        28: {
+            ecPerBlock: 30,
+            blocks: [
+                [11, 15],
+                [31, 16],
+            ],
+        },
+        29: {
+            ecPerBlock: 30,
+            blocks: [
+                [19, 15],
+                [26, 16],
+            ],
+        },
+        30: {
+            ecPerBlock: 30,
+            blocks: [
+                [23, 15],
+                [25, 16],
+            ],
+        },
+        31: {
+            ecPerBlock: 30,
+            blocks: [
+                [23, 15],
+                [28, 16],
+            ],
+        },
+        32: {
+            ecPerBlock: 30,
+            blocks: [
+                [19, 15],
+                [35, 16],
+            ],
+        },
+        33: {
+            ecPerBlock: 30,
+            blocks: [
+                [11, 15],
+                [46, 16],
+            ],
+        },
+        34: {
+            ecPerBlock: 30,
+            blocks: [
+                [59, 16],
+                [1, 17],
+            ],
+        },
+        35: {
+            ecPerBlock: 30,
+            blocks: [
+                [22, 15],
+                [41, 16],
+            ],
+        },
+        36: {
+            ecPerBlock: 30,
+            blocks: [
+                [2, 15],
+                [64, 16],
+            ],
+        },
+        37: {
+            ecPerBlock: 30,
+            blocks: [
+                [24, 15],
+                [46, 16],
+            ],
+        },
+        38: {
+            ecPerBlock: 30,
+            blocks: [
+                [42, 15],
+                [32, 16],
+            ],
+        },
+        39: {
+            ecPerBlock: 30,
+            blocks: [
+                [10, 15],
+                [67, 16],
+            ],
+        },
+        40: {
+            ecPerBlock: 30,
+            blocks: [
+                [20, 15],
+                [61, 16],
+            ],
+        },
+    };
+
+    // Alignment pattern positions for each version
+    const ALIGNMENT_PATTERNS: { [key: number]: number[] } = {
+        2: [6, 18],
+        3: [6, 22],
+        4: [6, 26],
+        5: [6, 30],
+        6: [6, 34],
+        7: [6, 22, 38],
+        8: [6, 24, 42],
+        9: [6, 26, 46],
+        10: [6, 28, 50],
+        11: [6, 30, 54],
+        12: [6, 32, 58],
+        13: [6, 34, 62],
+        14: [6, 26, 46, 66],
+        15: [6, 26, 48, 70],
+        16: [6, 26, 50, 74],
+        17: [6, 30, 54, 78],
+        18: [6, 30, 56, 82],
+        19: [6, 30, 58, 86],
+        20: [6, 34, 62, 90],
+        21: [6, 28, 50, 72, 94],
+        22: [6, 26, 50, 74, 98],
+        23: [6, 30, 54, 78, 102],
+        24: [6, 28, 54, 80, 106],
+        25: [6, 32, 58, 84, 110],
+        26: [6, 30, 58, 86, 114],
+        27: [6, 34, 62, 90, 118],
+        28: [6, 26, 50, 74, 98, 122],
+        29: [6, 30, 54, 78, 102, 126],
+        30: [6, 26, 52, 78, 104, 130],
+        31: [6, 30, 56, 82, 108, 134],
+        32: [6, 34, 60, 86, 112, 138],
+        33: [6, 30, 58, 86, 114, 142],
+        34: [6, 34, 62, 90, 118, 146],
+        35: [6, 30, 54, 78, 102, 126, 150],
+        36: [6, 24, 50, 76, 102, 128, 154],
+        37: [6, 28, 54, 80, 106, 132, 158],
+        38: [6, 32, 58, 84, 110, 136, 162],
+        39: [6, 26, 54, 82, 110, 138, 166],
+        40: [6, 30, 58, 86, 114, 142, 170],
+    };
+
+    // Version information for versions 7-40
+    const VERSION_INFO: { [key: number]: number } = {
+        7: 0x07c94,
+        8: 0x085bc,
+        9: 0x09a99,
+        10: 0x0a4d3,
+        11: 0x0bbf6,
+        12: 0x0c762,
+        13: 0x0d847,
+        14: 0x0e60d,
+        15: 0x0f928,
+        16: 0x10b78,
+        17: 0x1145d,
+        18: 0x12a17,
+        19: 0x13532,
+        20: 0x149a6,
+        21: 0x15683,
+        22: 0x168c9,
+        23: 0x177ec,
+        24: 0x18ec4,
+        25: 0x191e1,
+        26: 0x1afab,
+        27: 0x1b08e,
+        28: 0x1cc1a,
+        29: 0x1d33f,
+        30: 0x1ed75,
+        31: 0x1f250,
+        32: 0x209d5,
+        33: 0x216f0,
+        34: 0x228ba,
+        35: 0x2379f,
+        36: 0x24b0b,
+        37: 0x2542e,
+        38: 0x26a64,
+        39: 0x27541,
+        40: 0x28c69,
+    };
+
+    // Format information for H level (index = mask pattern)
+    const FORMAT_INFO = [
+        0x1689,
+        0x13be, // patterns 0, 1
+        0x0e65,
+        0x0b52, // patterns 2, 3
+        0x3af2,
+        0x3fc5, // patterns 4, 5
+        0x221e,
+        0x2729, // patterns 6, 7
+    ];
+
+    function getVersion(dataLength: number): number {
+        for (let v = 1; v <= 40; v++) {
+            if (VERSION_CAPACITY[v] >= dataLength) return v;
+        }
+        throw new Error('Data too long for QR code');
+    }
+
+    function encodeData(text: string, version: number): number[] {
+        const data: number[] = [];
+        const bytes = new TextEncoder().encode(text);
+        const capacity = VERSION_CAPACITY[version];
+
+        // Mode indicator (0100 = byte mode)
+        // Character count indicator (8 bits for versions 1-9, 16 bits for 10+)
+        if (version < 10) {
+            data.push(0x40 | (bytes.length >> 4));
+            data.push(((bytes.length & 0xf) << 4) | (bytes[0] >> 4));
+            for (let i = 0; i < bytes.length - 1; i++) {
+                data.push(((bytes[i] & 0xf) << 4) | (bytes[i + 1] >> 4));
+            }
+            data.push((bytes[bytes.length - 1] & 0xf) << 4);
+        } else {
+            data.push(0x40);
+            data.push(bytes.length);
+            for (let i = 0; i < bytes.length; i++) {
+                data.push(bytes[i]);
+            }
+        }
+
+        // Add terminator (0000)
+        // Pad to fill capacity
+        const ecInfo = EC_BLOCKS[version];
+        let totalDataBytes = 0;
+        for (const [count, dataBytes] of ecInfo.blocks) {
+            totalDataBytes += count * dataBytes;
+        }
+
+        while (data.length < totalDataBytes) {
+            data.push(0);
+            if (data.length < totalDataBytes) data.push(0);
+        }
+        data.length = totalDataBytes;
+
+        // Add padding pattern
+        let padIndex = 0;
+        const padPatterns = [0xec, 0x11];
+        for (let i = Math.ceil((bytes.length + 3) / 1); i < totalDataBytes; i++) {
+            if (data[i] === 0) {
+                data[i] = padPatterns[padIndex % 2];
+                padIndex++;
+            }
+        }
+
+        return data;
+    }
+
+    function generateCodewords(data: number[], version: number): number[] {
+        const ecInfo = EC_BLOCKS[version];
+        const blocks: { data: number[]; ec: number[] }[] = [];
+        let dataIndex = 0;
+
+        // Split data into blocks and generate EC for each
+        for (const [count, dataBytes] of ecInfo.blocks) {
+            for (let i = 0; i < count; i++) {
+                const blockData = data.slice(dataIndex, dataIndex + dataBytes);
+                dataIndex += dataBytes;
+                const ec = rsEncode(blockData, ecInfo.ecPerBlock);
+                blocks.push({ data: blockData, ec });
+            }
+        }
+
+        // Interleave data codewords
+        const result: number[] = [];
+        const maxDataLen = Math.max(...blocks.map((b) => b.data.length));
+        for (let i = 0; i < maxDataLen; i++) {
+            for (const block of blocks) {
+                if (i < block.data.length) {
+                    result.push(block.data[i]);
+                }
+            }
+        }
+
+        // Interleave EC codewords
+        for (let i = 0; i < ecInfo.ecPerBlock; i++) {
+            for (const block of blocks) {
+                result.push(block.ec[i]);
+            }
+        }
+
+        return result;
+    }
+
+    function createMatrix(version: number): (boolean | null)[][] {
+        const size = version * 4 + 17;
+        const matrix: (boolean | null)[][] = Array.from({ length: size }, () =>
+            Array(size).fill(null)
+        );
+        return matrix;
+    }
+
+    function addFinderPatterns(matrix: (boolean | null)[][]): void {
+        const size = matrix.length;
+        const pattern = [
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 1],
+            [1, 0, 1, 1, 1, 0, 1],
+            [1, 0, 1, 1, 1, 0, 1],
+            [1, 0, 1, 1, 1, 0, 1],
+            [1, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+        ];
+
+        // Top-left, top-right, bottom-left
+        const positions = [
+            [0, 0],
+            [size - 7, 0],
+            [0, size - 7],
+        ];
+
+        for (const [x, y] of positions) {
+            for (let dy = 0; dy < 7; dy++) {
+                for (let dx = 0; dx < 7; dx++) {
+                    matrix[y + dy][x + dx] = pattern[dy][dx] === 1;
+                }
+            }
+        }
+
+        // Add separators (white border around finder patterns)
+        // Top-left
+        for (let i = 0; i < 8; i++) {
+            if (matrix[7] && matrix[7][i] === null) matrix[7][i] = false;
+            if (matrix[i] && matrix[i][7] === null) matrix[i][7] = false;
+        }
+        // Top-right
+        for (let i = 0; i < 8; i++) {
+            if (matrix[7] && matrix[7][size - 8 + i] === null) matrix[7][size - 8 + i] = false;
+            if (matrix[i] && matrix[i][size - 8] === null) matrix[i][size - 8] = false;
+        }
+        // Bottom-left
+        for (let i = 0; i < 8; i++) {
+            if (matrix[size - 8] && matrix[size - 8][i] === null) matrix[size - 8][i] = false;
+            if (matrix[size - 8 + i] && matrix[size - 8 + i][7] === null)
+                matrix[size - 8 + i][7] = false;
+        }
+    }
+
+    function addTimingPatterns(matrix: (boolean | null)[][]): void {
+        const size = matrix.length;
+        for (let i = 8; i < size - 8; i++) {
+            matrix[6][i] = i % 2 === 0;
+            matrix[i][6] = i % 2 === 0;
+        }
+    }
+
+    function addAlignmentPatterns(matrix: (boolean | null)[][], version: number): void {
+        if (version < 2) return;
+
+        const positions = ALIGNMENT_PATTERNS[version];
+        if (!positions) return;
+
+        for (const y of positions) {
+            for (const x of positions) {
+                // Skip if overlapping with finder patterns
+                if (
+                    (x <= 8 && y <= 8) ||
+                    (x <= 8 && y >= matrix.length - 9) ||
+                    (x >= matrix.length - 9 && y <= 8)
+                ) {
+                    continue;
+                }
+
+                // Draw alignment pattern
+                for (let dy = -2; dy <= 2; dy++) {
+                    for (let dx = -2; dx <= 2; dx++) {
+                        const isDark =
+                            Math.abs(dx) === 2 || Math.abs(dy) === 2 || (dx === 0 && dy === 0);
+                        matrix[y + dy][x + dx] = isDark;
+                    }
+                }
+            }
+        }
+    }
+
+    function addDarkModule(matrix: (boolean | null)[][], version: number): void {
+        matrix[4 * version + 9][8] = true;
+    }
+
+    function reserveFormatAreas(matrix: (boolean | null)[][]): void {
+        const size = matrix.length;
+
+        // Around top-left finder pattern
+        for (let i = 0; i < 9; i++) {
+            if (matrix[8][i] === null) matrix[8][i] = false;
+            if (matrix[i][8] === null) matrix[i][8] = false;
+        }
+
+        // Around top-right and bottom-left
+        for (let i = 0; i < 8; i++) {
+            if (matrix[8][size - 8 + i] === null) matrix[8][size - 8 + i] = false;
+            if (matrix[size - 8 + i][8] === null) matrix[size - 8 + i][8] = false;
+        }
+    }
+
+    function reserveVersionAreas(matrix: (boolean | null)[][], version: number): void {
+        if (version < 7) return;
+
+        const size = matrix.length;
+        // Bottom-left version info area
+        for (let i = 0; i < 6; i++) {
+            for (let j = 0; j < 3; j++) {
+                matrix[size - 11 + j][i] = false;
+            }
+        }
+        // Top-right version info area
+        for (let i = 0; i < 6; i++) {
+            for (let j = 0; j < 3; j++) {
+                matrix[i][size - 11 + j] = false;
+            }
+        }
+    }
+
+    function placeData(matrix: (boolean | null)[][], codewords: number[]): void {
+        const size = matrix.length;
+        let bitIndex = 0;
+        let up = true;
+
+        // Start from bottom-right, move in 2-column strips
+        for (let x = size - 1; x >= 0; x -= 2) {
+            if (x === 6) x = 5; // Skip vertical timing pattern
+
+            const startY = up ? size - 1 : 0;
+            const endY = up ? -1 : size;
+            const step = up ? -1 : 1;
+
+            for (let y = startY; y !== endY; y += step) {
+                for (let dx = 0; dx <= 1; dx++) {
+                    const col = x - dx;
+                    if (matrix[y][col] === null) {
+                        const byteIndex = Math.floor(bitIndex / 8);
+                        if (byteIndex < codewords.length) {
+                            const bitPos = 7 - (bitIndex % 8);
+                            const bit = (codewords[byteIndex] >> bitPos) & 1;
+                            matrix[y][col] = bit === 1;
+                        } else {
+                            matrix[y][col] = false;
+                        }
+                        bitIndex++;
+                    }
+                }
+            }
+            up = !up;
+        }
+    }
+
+    function applyMask(
+        matrix: (boolean | null)[][],
+        pattern: number,
+        reserved: (boolean | null)[][]
+    ): void {
+        const size = matrix.length;
+        const maskFunctions = [
+            (y: number, x: number) => (y + x) % 2 === 0,
+            (y: number, _x: number) => y % 2 === 0,
+            (_y: number, x: number) => x % 3 === 0,
+            (y: number, x: number) => (y + x) % 3 === 0,
+            (y: number, x: number) => (Math.floor(y / 2) + Math.floor(x / 3)) % 2 === 0,
+            (y: number, x: number) => ((y * x) % 2) + ((y * x) % 3) === 0,
+            (y: number, x: number) => (((y * x) % 2) + ((y * x) % 3)) % 2 === 0,
+            (y: number, x: number) => (((y + x) % 2) + ((y * x) % 3)) % 2 === 0,
+        ];
+
+        const maskFn = maskFunctions[pattern];
+
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                if (reserved[y][x] === null) {
+                    if (maskFn(y, x)) {
+                        matrix[y][x] = !matrix[y][x];
+                    }
+                }
+            }
+        }
+    }
+
+    function addFormatInfo(matrix: (boolean | null)[][], pattern: number): void {
+        const size = matrix.length;
+        const formatBits = FORMAT_INFO[pattern];
+
+        // Place format info around top-left finder pattern
+        const positions1 = [
+            [0, 8],
+            [1, 8],
+            [2, 8],
+            [3, 8],
+            [4, 8],
+            [5, 8],
+            [7, 8],
+            [8, 8],
+            [8, 7],
+            [8, 5],
+            [8, 4],
+            [8, 3],
+            [8, 2],
+            [8, 1],
+            [8, 0],
+        ];
+
+        // Place format info around other finder patterns
+        const positions2: [number, number][] = [];
+        for (let i = 0; i < 7; i++) {
+            positions2.push([8, size - 1 - i]);
+        }
+        for (let i = 0; i < 8; i++) {
+            positions2.push([size - 8 + i, 8]);
+        }
+
+        for (let i = 0; i < 15; i++) {
+            const bit = (formatBits >> (14 - i)) & 1;
+            const [y1, x1] = positions1[i];
+            matrix[y1][x1] = bit === 1;
+
+            if (i < positions2.length) {
+                const [y2, x2] = positions2[i];
+                matrix[y2][x2] = bit === 1;
+            }
+        }
+    }
+
+    function addVersionInfo(matrix: (boolean | null)[][], version: number): void {
+        if (version < 7) return;
+
+        const size = matrix.length;
+        const versionBits = VERSION_INFO[version];
+
+        let bitIndex = 0;
+        for (let i = 0; i < 6; i++) {
+            for (let j = 0; j < 3; j++) {
+                const bit = (versionBits >> bitIndex) & 1;
+                // Bottom-left
+                matrix[size - 11 + j][i] = bit === 1;
+                // Top-right
+                matrix[i][size - 11 + j] = bit === 1;
+                bitIndex++;
+            }
+        }
+    }
+
+    function calculatePenalty(matrix: boolean[][]): number {
+        const size = matrix.length;
+        let penalty = 0;
+
+        // Rule 1: consecutive modules in row/column
+        for (let y = 0; y < size; y++) {
+            let count = 1;
+            for (let x = 1; x < size; x++) {
+                if (matrix[y][x] === matrix[y][x - 1]) {
+                    count++;
+                } else {
+                    if (count >= 5) penalty += count - 2;
+                    count = 1;
+                }
+            }
+            if (count >= 5) penalty += count - 2;
+        }
+
+        for (let x = 0; x < size; x++) {
+            let count = 1;
+            for (let y = 1; y < size; y++) {
+                if (matrix[y][x] === matrix[y - 1][x]) {
+                    count++;
+                } else {
+                    if (count >= 5) penalty += count - 2;
+                    count = 1;
+                }
+            }
+            if (count >= 5) penalty += count - 2;
+        }
+
+        // Rule 2: 2x2 blocks
+        for (let y = 0; y < size - 1; y++) {
+            for (let x = 0; x < size - 1; x++) {
+                const val = matrix[y][x];
+                if (
+                    val === matrix[y][x + 1] &&
+                    val === matrix[y + 1][x] &&
+                    val === matrix[y + 1][x + 1]
+                ) {
+                    penalty += 3;
+                }
+            }
+        }
+
+        // Rule 3: finder-like patterns
+        const pattern1 = [true, false, true, true, true, false, true, false, false, false, false];
+        const pattern2 = [false, false, false, false, true, false, true, true, true, false, true];
+
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x <= size - 11; x++) {
+                let match1 = true,
+                    match2 = true;
+                for (let i = 0; i < 11; i++) {
+                    if (matrix[y][x + i] !== pattern1[i]) match1 = false;
+                    if (matrix[y][x + i] !== pattern2[i]) match2 = false;
+                }
+                if (match1 || match2) penalty += 40;
+            }
+        }
+
+        for (let x = 0; x < size; x++) {
+            for (let y = 0; y <= size - 11; y++) {
+                let match1 = true,
+                    match2 = true;
+                for (let i = 0; i < 11; i++) {
+                    if (matrix[y + i][x] !== pattern1[i]) match1 = false;
+                    if (matrix[y + i][x] !== pattern2[i]) match2 = false;
+                }
+                if (match1 || match2) penalty += 40;
+            }
+        }
+
+        // Rule 4: proportion of dark modules
+        let darkCount = 0;
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                if (matrix[y][x]) darkCount++;
+            }
+        }
+        const percentage = (darkCount / (size * size)) * 100;
+        const deviation = Math.abs(percentage - 50);
+        penalty += Math.floor(deviation / 5) * 10;
+
+        return penalty;
+    }
+
+    function generateQR(text: string): boolean[][] {
+        const bytes = new TextEncoder().encode(text);
+        const version = getVersion(bytes.length);
+        const size = version * 4 + 17;
+
+        // Encode data
+        const data = encodeData(text, version);
+        const codewords = generateCodewords(data, version);
+
+        // Create matrix with finder patterns, timing patterns, etc.
+        const matrix = createMatrix(version);
+        addFinderPatterns(matrix);
+        addTimingPatterns(matrix);
+        addAlignmentPatterns(matrix, version);
+        addDarkModule(matrix, version);
+
+        // Create reserved pattern mask
+        const reserved = createMatrix(version);
+        addFinderPatterns(reserved);
+        addTimingPatterns(reserved);
+        addAlignmentPatterns(reserved, version);
+        addDarkModule(reserved, version);
+        reserveFormatAreas(reserved);
+        reserveVersionAreas(reserved, version);
+
+        // Place data
+        placeData(matrix, codewords);
+
+        // Find best mask pattern
+        let bestMask = 0;
+        let bestPenalty = Infinity;
+
+        for (let mask = 0; mask < 8; mask++) {
+            const testMatrix = matrix.map((row) => [...row]);
+            applyMask(testMatrix, mask, reserved);
+            addFormatInfo(testMatrix, mask);
+            addVersionInfo(testMatrix, version);
+
+            const penalty = calculatePenalty(testMatrix as boolean[][]);
+            if (penalty < bestPenalty) {
+                bestPenalty = penalty;
+                bestMask = mask;
+            }
+        }
+
+        // Apply best mask
+        applyMask(matrix, bestMask, reserved);
+        addFormatInfo(matrix, bestMask);
+        addVersionInfo(matrix, version);
+
+        return matrix as boolean[][];
+    }
+
+    function drawQRCode(matrix: boolean[][], canvas: HTMLCanvasElement): void {
+        const moduleSize = 8;
+        const quietZone = 4;
+        const size = matrix.length;
+        const canvasSize = (size + quietZone * 2) * moduleSize;
+
+        canvas.width = canvasSize;
+        canvas.height = canvasSize;
+
+        const ctx = canvas.getContext('2d')!;
+
+        // White background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+        // Draw modules
+        ctx.fillStyle = '#000000';
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                if (matrix[y][x]) {
+                    ctx.fillRect(
+                        (x + quietZone) * moduleSize,
+                        (y + quietZone) * moduleSize,
+                        moduleSize,
+                        moduleSize
+                    );
+                }
+            }
+        }
+
+        // Draw logo in center
+        const logoSize = Math.floor(canvasSize * 0.2);
+        const logoX = (canvasSize - logoSize) / 2;
+        const logoY = (canvasSize - logoSize) / 2;
+
+        // White background for logo
+        const padding = logoSize * 0.15;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.roundRect(
+            logoX - padding,
+            logoY - padding,
+            logoSize + padding * 2,
+            logoSize + padding * 2,
+            8
+        );
+        ctx.fill();
+
+        // Draw the J logo
+        ctx.fillStyle = 'rgb(36, 209, 248)';
+        const scale = logoSize / 10;
+        ctx.beginPath();
+        ctx.moveTo(logoX + 0 * scale, logoY + 6 * scale);
+        ctx.lineTo(logoX + 6 * scale, logoY + 6 * scale);
+        ctx.lineTo(logoX + 6 * scale, logoY + 0 * scale);
+        ctx.lineTo(logoX + 10 * scale, logoY + 0 * scale);
+        ctx.lineTo(logoX + 10 * scale, logoY + 6 * scale);
+        ctx.lineTo(logoX + 5 * scale, logoY + 10 * scale);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    function isValidURL(string: string): boolean {
+        try {
+            const url = new URL(string);
+            return url.protocol === 'http:' || url.protocol === 'https:';
+        } catch {
+            return false;
+        }
+    }
+
+    function generate() {
+        const url = urlInput.value.trim();
+
+        if (!url) {
+            errorMessage?.classList.remove('hidden');
+            errorMessage!.textContent = 'Please enter a URL';
+            return;
+        }
+
+        if (!isValidURL(url)) {
+            errorMessage?.classList.remove('hidden');
+            errorMessage!.textContent = 'Please enter a valid URL (including https://)';
+            return;
+        }
+
+        errorMessage?.classList.add('hidden');
+
+        try {
+            const matrix = generateQR(url);
+            drawQRCode(matrix, qrCanvas);
+
+            placeholder?.classList.add('hidden');
+            qrCanvas.classList.remove('hidden');
+            downloadBtn?.classList.remove('hidden');
+
+            qrContainer!.className =
+                'mx-auto flex h-auto w-full max-w-sm items-center justify-center rounded-3xl border-2 border-brand bg-white p-6 transition-all duration-300';
+        } catch (e) {
+            errorMessage?.classList.remove('hidden');
+            errorMessage!.textContent = 'URL is too long. Please use a shorter URL.';
+        }
+    }
+
+    function download() {
+        const link = document.createElement('a');
+        link.download = 'qr-code.png';
+        link.href = qrCanvas.toDataURL('image/png');
+        link.click();
+    }
+
+    // Event listeners
+    generateBtn?.addEventListener('click', generate);
+    downloadBtn?.addEventListener('click', download);
+    urlInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') generate();
+    });
+</script>
