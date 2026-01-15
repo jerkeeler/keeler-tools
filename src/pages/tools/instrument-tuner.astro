@@ -1,0 +1,754 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ToolHeader from '../../components/ToolHeader.astro';
+---
+
+<Layout
+    title="Instrument Tuner | Keeler Tools"
+    description="Tune your instrument with precision using your microphone or play reference tones"
+>
+    <ToolHeader
+        title="Instrument Tuner"
+        description="Tune your instrument with precision using your microphone, or play reference tones to tune by ear"
+        tag="Music"
+    />
+
+    <main class="mx-auto max-w-2xl px-6 py-12 relative">
+        <!-- Decorative blobs -->
+        <div
+            class="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-gradient-to-br from-purple-200/40 to-pink-200/40 blur-3xl"
+            aria-hidden="true"
+        >
+        </div>
+        <div
+            class="pointer-events-none absolute -right-32 bottom-0 h-80 w-80 rounded-full bg-gradient-to-tr from-brand/20 to-cyan-200/40 blur-3xl"
+            aria-hidden="true"
+        >
+        </div>
+
+        <!-- Tuner Section -->
+        <div class="relative rounded-3xl border border-slate-200 bg-white p-8 shadow-xl mb-8">
+            <h2 class="text-xl font-bold text-slate-800 mb-6 text-center">🎵 Microphone Tuner</h2>
+
+            <!-- Tuner Display -->
+            <div class="relative flex flex-col items-center">
+                <!-- Arc Meter -->
+                <div class="relative w-72 h-40 mb-4">
+                    <svg viewBox="0 0 200 110" class="w-full h-full">
+                        <!-- Background arc -->
+                        <path
+                            d="M 10 100 A 90 90 0 0 1 190 100"
+                            fill="none"
+                            stroke="#e2e8f0"
+                            stroke-width="8"
+                            stroke-linecap="round"></path>
+                        <!-- Colored segments -->
+                        <path
+                            d="M 10 100 A 90 90 0 0 1 40 35"
+                            fill="none"
+                            stroke="#ef4444"
+                            stroke-width="8"
+                            stroke-linecap="round"
+                            opacity="0.6"></path>
+                        <path
+                            d="M 40 35 A 90 90 0 0 1 80 15"
+                            fill="none"
+                            stroke="#f97316"
+                            stroke-width="8"
+                            stroke-linecap="round"
+                            opacity="0.6"></path>
+                        <path
+                            d="M 80 15 A 90 90 0 0 1 120 15"
+                            fill="none"
+                            stroke="#22c55e"
+                            stroke-width="8"
+                            stroke-linecap="round"
+                            opacity="0.6"></path>
+                        <path
+                            d="M 120 15 A 90 90 0 0 1 160 35"
+                            fill="none"
+                            stroke="#f97316"
+                            stroke-width="8"
+                            stroke-linecap="round"
+                            opacity="0.6"></path>
+                        <path
+                            d="M 160 35 A 90 90 0 0 1 190 100"
+                            fill="none"
+                            stroke="#ef4444"
+                            stroke-width="8"
+                            stroke-linecap="round"
+                            opacity="0.6"></path>
+                        <!-- Center tick marks -->
+                        <line
+                            x1="100"
+                            y1="12"
+                            x2="100"
+                            y2="22"
+                            stroke="#16a34a"
+                            stroke-width="3"
+                            stroke-linecap="round"></line>
+                        <!-- Side tick marks -->
+                        <line
+                            x1="55"
+                            y1="28"
+                            x2="60"
+                            y2="36"
+                            stroke="#94a3b8"
+                            stroke-width="2"
+                            stroke-linecap="round"></line>
+                        <line
+                            x1="145"
+                            y1="28"
+                            x2="140"
+                            y2="36"
+                            stroke="#94a3b8"
+                            stroke-width="2"
+                            stroke-linecap="round"></line>
+                        <!-- Labels -->
+                        <text x="20" y="95" font-size="10" fill="#64748b" font-weight="500"
+                            >-50</text
+                        >
+                        <text x="95" y="8" font-size="10" fill="#16a34a" font-weight="600">0</text>
+                        <text x="170" y="95" font-size="10" fill="#64748b" font-weight="500"
+                            >+50</text
+                        >
+                        <!-- Needle -->
+                        <g id="needle" transform="rotate(0, 100, 100)">
+                            <line
+                                x1="100"
+                                y1="100"
+                                x2="100"
+                                y2="25"
+                                stroke="#1e293b"
+                                stroke-width="3"
+                                stroke-linecap="round"></line>
+                            <circle cx="100" cy="100" r="8" fill="#1e293b"></circle>
+                            <circle cx="100" cy="100" r="4" fill="#fff"></circle>
+                        </g>
+                    </svg>
+                </div>
+
+                <!-- Note Display -->
+                <div class="text-center mb-4">
+                    <div id="note-display" class="text-6xl font-bold text-slate-800 mb-1">--</div>
+                    <div id="octave-display" class="text-2xl text-slate-500 font-medium"></div>
+                </div>
+
+                <!-- Cents Display -->
+                <div class="flex items-center gap-4 mb-4">
+                    <span class="text-sm text-slate-500">Flat</span>
+                    <div
+                        id="cents-display"
+                        class="text-2xl font-mono font-bold text-slate-700 w-24 text-center"
+                    >
+                        -- ¢
+                    </div>
+                    <span class="text-sm text-slate-500">Sharp</span>
+                </div>
+
+                <!-- Frequency Display -->
+                <div id="frequency-display" class="text-sm text-slate-400 mb-6">-- Hz</div>
+
+                <!-- Tuner Controls -->
+                <div class="flex gap-4">
+                    <button
+                        id="start-tuner"
+                        class="px-6 py-3 bg-brand text-white font-semibold rounded-xl hover:bg-brand-dark transition-colors shadow-lg shadow-brand/25"
+                    >
+                        🎤 Start Tuner
+                    </button>
+                    <button
+                        id="stop-tuner"
+                        class="px-6 py-3 bg-slate-200 text-slate-700 font-semibold rounded-xl hover:bg-slate-300 transition-colors hidden"
+                    >
+                        ⏹️ Stop
+                    </button>
+                </div>
+
+                <!-- Status -->
+                <div id="tuner-status" class="mt-4 text-sm text-slate-500"></div>
+            </div>
+        </div>
+
+        <!-- Reference Tone Section -->
+        <div class="relative rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
+            <h2 class="text-xl font-bold text-slate-800 mb-6 text-center">
+                🔊 Reference Tone Generator
+            </h2>
+
+            <div class="flex flex-col items-center">
+                <!-- Note Selection -->
+                <div class="mb-6 w-full max-w-sm">
+                    <label class="block text-sm font-medium text-slate-600 mb-2">Select Note</label>
+                    <div class="grid grid-cols-4 gap-2 mb-4">
+                        <button
+                            data-note="C"
+                            class="note-btn px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:border-brand hover:bg-brand/5 transition-all"
+                            >C</button
+                        >
+                        <button
+                            data-note="C#"
+                            class="note-btn px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:border-brand hover:bg-brand/5 transition-all"
+                            >C#</button
+                        >
+                        <button
+                            data-note="D"
+                            class="note-btn px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:border-brand hover:bg-brand/5 transition-all"
+                            >D</button
+                        >
+                        <button
+                            data-note="D#"
+                            class="note-btn px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:border-brand hover:bg-brand/5 transition-all"
+                            >D#</button
+                        >
+                        <button
+                            data-note="E"
+                            class="note-btn px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:border-brand hover:bg-brand/5 transition-all"
+                            >E</button
+                        >
+                        <button
+                            data-note="F"
+                            class="note-btn px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:border-brand hover:bg-brand/5 transition-all"
+                            >F</button
+                        >
+                        <button
+                            data-note="F#"
+                            class="note-btn px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:border-brand hover:bg-brand/5 transition-all"
+                            >F#</button
+                        >
+                        <button
+                            data-note="G"
+                            class="note-btn px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:border-brand hover:bg-brand/5 transition-all"
+                            >G</button
+                        >
+                        <button
+                            data-note="G#"
+                            class="note-btn px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:border-brand hover:bg-brand/5 transition-all"
+                            >G#</button
+                        >
+                        <button
+                            data-note="A"
+                            class="note-btn px-3 py-2 rounded-lg border-2 border-brand bg-brand/10 text-brand-dark font-semibold"
+                            >A</button
+                        >
+                        <button
+                            data-note="A#"
+                            class="note-btn px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:border-brand hover:bg-brand/5 transition-all"
+                            >A#</button
+                        >
+                        <button
+                            data-note="B"
+                            class="note-btn px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:border-brand hover:bg-brand/5 transition-all"
+                            >B</button
+                        >
+                    </div>
+
+                    <!-- Octave Selection -->
+                    <label class="block text-sm font-medium text-slate-600 mb-2"
+                        >Select Octave</label
+                    >
+                    <div class="flex gap-2 justify-center mb-4">
+                        <button
+                            data-octave="2"
+                            class="octave-btn px-4 py-2 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:border-brand hover:bg-brand/5 transition-all"
+                            >2</button
+                        >
+                        <button
+                            data-octave="3"
+                            class="octave-btn px-4 py-2 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:border-brand hover:bg-brand/5 transition-all"
+                            >3</button
+                        >
+                        <button
+                            data-octave="4"
+                            class="octave-btn px-4 py-2 rounded-lg border-2 border-brand bg-brand/10 text-brand-dark font-semibold"
+                            >4</button
+                        >
+                        <button
+                            data-octave="5"
+                            class="octave-btn px-4 py-2 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:border-brand hover:bg-brand/5 transition-all"
+                            >5</button
+                        >
+                        <button
+                            data-octave="6"
+                            class="octave-btn px-4 py-2 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:border-brand hover:bg-brand/5 transition-all"
+                            >6</button
+                        >
+                    </div>
+                </div>
+
+                <!-- Current Selection Display -->
+                <div class="text-center mb-6">
+                    <div class="text-4xl font-bold text-slate-800 mb-1">
+                        <span id="selected-note">A</span><span
+                            id="selected-octave"
+                            class="text-2xl text-slate-500">4</span
+                        >
+                    </div>
+                    <div id="selected-frequency" class="text-lg text-slate-500">440.00 Hz</div>
+                </div>
+
+                <!-- Play Button -->
+                <button
+                    id="play-tone"
+                    class="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-lg rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg shadow-purple-500/25"
+                >
+                    ▶️ Play Tone
+                </button>
+                <button
+                    id="stop-tone"
+                    class="px-8 py-4 bg-slate-700 text-white font-bold text-lg rounded-xl hover:bg-slate-800 transition-all shadow-lg hidden"
+                >
+                    ⏹️ Stop Tone
+                </button>
+
+                <!-- Volume Control -->
+                <div class="mt-6 w-full max-w-xs">
+                    <label class="block text-sm font-medium text-slate-600 mb-2 text-center"
+                        >Volume</label
+                    >
+                    <input
+                        type="range"
+                        id="volume-slider"
+                        min="0"
+                        max="100"
+                        value="30"
+                        class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand"
+                    />
+                </div>
+            </div>
+        </div>
+
+        <!-- A4 Reference Setting -->
+        <div class="relative rounded-3xl border border-slate-200 bg-white p-6 shadow-xl mt-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="font-bold text-slate-800">A4 Reference Pitch</h3>
+                    <p class="text-sm text-slate-500">Standard tuning is 440 Hz</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button
+                        id="a4-decrease"
+                        class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-colors"
+                        >-</button
+                    >
+                    <input
+                        type="number"
+                        id="a4-reference"
+                        value="440"
+                        min="400"
+                        max="480"
+                        class="w-20 text-center border border-slate-200 rounded-lg py-1 font-mono font-bold text-slate-800"
+                    />
+                    <span class="text-slate-500">Hz</span>
+                    <button
+                        id="a4-increase"
+                        class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-colors"
+                        >+</button
+                    >
+                </div>
+            </div>
+        </div>
+    </main>
+</Layout>
+
+<script>
+    // Note frequencies and names
+    const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+    // State
+    let audioContext: AudioContext | null = null;
+    let analyser: AnalyserNode | null = null;
+    let microphone: MediaStreamAudioSourceNode | null = null;
+    let mediaStream: MediaStream | null = null;
+    let oscillator: OscillatorNode | null = null;
+    let gainNode: GainNode | null = null;
+    let isListening = false;
+    let isPlaying = false;
+    let animationId: number | null = null;
+    let a4Reference = 440;
+    let selectedNote = 'A';
+    let selectedOctave = 4;
+
+    // DOM Elements
+    const startBtn = document.getElementById('start-tuner') as HTMLButtonElement;
+    const stopBtn = document.getElementById('stop-tuner') as HTMLButtonElement;
+    const noteDisplay = document.getElementById('note-display') as HTMLDivElement;
+    const octaveDisplay = document.getElementById('octave-display') as HTMLDivElement;
+    const centsDisplay = document.getElementById('cents-display') as HTMLDivElement;
+    const frequencyDisplay = document.getElementById('frequency-display') as HTMLDivElement;
+    const needle = document.getElementById('needle') as SVGGElement;
+    const tunerStatus = document.getElementById('tuner-status') as HTMLDivElement;
+    const playToneBtn = document.getElementById('play-tone') as HTMLButtonElement;
+    const stopToneBtn = document.getElementById('stop-tone') as HTMLButtonElement;
+    const volumeSlider = document.getElementById('volume-slider') as HTMLInputElement;
+    const selectedNoteDisplay = document.getElementById('selected-note') as HTMLSpanElement;
+    const selectedOctaveDisplay = document.getElementById('selected-octave') as HTMLSpanElement;
+    const selectedFrequencyDisplay = document.getElementById(
+        'selected-frequency'
+    ) as HTMLDivElement;
+    const a4Input = document.getElementById('a4-reference') as HTMLInputElement;
+    const a4Decrease = document.getElementById('a4-decrease') as HTMLButtonElement;
+    const a4Increase = document.getElementById('a4-increase') as HTMLButtonElement;
+
+    // Calculate frequency for a given note and octave
+    function getFrequency(note: string, octave: number): number {
+        const noteIndex = NOTE_NAMES.indexOf(note);
+        const semitonesFromA4 = (octave - 4) * 12 + (noteIndex - 9);
+        return a4Reference * Math.pow(2, semitonesFromA4 / 12);
+    }
+
+    // Get note info from frequency
+    function getNoteFromFrequency(
+        frequency: number
+    ): { note: string; octave: number; cents: number } | null {
+        if (frequency <= 0) return null;
+
+        const semitonesFromA4 = 12 * Math.log2(frequency / a4Reference);
+        const roundedSemitones = Math.round(semitonesFromA4);
+        const cents = Math.round((semitonesFromA4 - roundedSemitones) * 100);
+
+        let noteIndex = ((roundedSemitones % 12) + 9) % 12;
+        if (noteIndex < 0) noteIndex += 12;
+
+        const octave = 4 + Math.floor((roundedSemitones + 9) / 12);
+
+        return {
+            note: NOTE_NAMES[noteIndex],
+            octave,
+            cents,
+        };
+    }
+
+    // Autocorrelation pitch detection
+    function autoCorrelate(buffer: Float32Array, sampleRate: number): number {
+        const SIZE = buffer.length;
+        const MAX_SAMPLES = Math.floor(SIZE / 2);
+        let bestOffset = -1;
+        let bestCorrelation = 0;
+        let rms = 0;
+        let foundGoodCorrelation = false;
+        const correlations = new Array(MAX_SAMPLES);
+
+        // Calculate RMS
+        for (let i = 0; i < SIZE; i++) {
+            rms += buffer[i] * buffer[i];
+        }
+        rms = Math.sqrt(rms / SIZE);
+
+        // Not enough signal
+        if (rms < 0.01) return -1;
+
+        let lastCorrelation = 1;
+        for (let offset = 0; offset < MAX_SAMPLES; offset++) {
+            let correlation = 0;
+
+            for (let i = 0; i < MAX_SAMPLES; i++) {
+                correlation += Math.abs(buffer[i] - buffer[i + offset]);
+            }
+            correlation = 1 - correlation / MAX_SAMPLES;
+            correlations[offset] = correlation;
+
+            if (correlation > 0.9 && correlation > lastCorrelation) {
+                foundGoodCorrelation = true;
+                if (correlation > bestCorrelation) {
+                    bestCorrelation = correlation;
+                    bestOffset = offset;
+                }
+            } else if (foundGoodCorrelation) {
+                // We've found a good correlation, then a bad one.
+                // We've probably finished the cycle.
+                const shift =
+                    (correlations[bestOffset + 1] - correlations[bestOffset - 1]) /
+                    correlations[bestOffset];
+                return sampleRate / (bestOffset + 8 * shift);
+            }
+            lastCorrelation = correlation;
+        }
+
+        if (bestCorrelation > 0.01) {
+            return sampleRate / bestOffset;
+        }
+        return -1;
+    }
+
+    // Update needle position
+    function updateNeedle(cents: number) {
+        // Convert cents (-50 to +50) to rotation angle (-90 to +90 degrees)
+        const angle = Math.max(-50, Math.min(50, cents)) * 1.8;
+        needle.setAttribute('transform', `rotate(${angle}, 100, 100)`);
+    }
+
+    // Update display colors based on cents
+    function updateDisplayColors(cents: number) {
+        const absCents = Math.abs(cents);
+        let color: string;
+
+        if (absCents <= 5) {
+            color = '#22c55e'; // Green - in tune
+        } else if (absCents <= 15) {
+            color = '#84cc16'; // Lime - close
+        } else if (absCents <= 30) {
+            color = '#f97316'; // Orange - getting there
+        } else {
+            color = '#ef4444'; // Red - out of tune
+        }
+
+        noteDisplay.style.color = color;
+        centsDisplay.style.color = color;
+    }
+
+    // Analyze audio and update display
+    function analyze() {
+        if (!analyser || !isListening) return;
+
+        const buffer = new Float32Array(analyser.fftSize);
+        analyser.getFloatTimeDomainData(buffer);
+
+        const frequency = autoCorrelate(buffer, audioContext!.sampleRate);
+
+        if (frequency > 0) {
+            const noteInfo = getNoteFromFrequency(frequency);
+
+            if (noteInfo) {
+                noteDisplay.textContent = noteInfo.note;
+                octaveDisplay.textContent = noteInfo.octave.toString();
+                const centsPrefix = noteInfo.cents >= 0 ? '+' : '';
+                centsDisplay.textContent = `${centsPrefix}${noteInfo.cents} ¢`;
+                frequencyDisplay.textContent = `${frequency.toFixed(1)} Hz`;
+
+                updateNeedle(noteInfo.cents);
+                updateDisplayColors(noteInfo.cents);
+            }
+        }
+
+        animationId = requestAnimationFrame(analyze);
+    }
+
+    // Start tuner
+    async function startTuner() {
+        try {
+            tunerStatus.textContent = 'Requesting microphone access...';
+
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioContext = new AudioContext();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 4096;
+
+            microphone = audioContext.createMediaStreamSource(mediaStream);
+            microphone.connect(analyser);
+
+            isListening = true;
+            tunerStatus.textContent = 'Listening...';
+            startBtn.classList.add('hidden');
+            stopBtn.classList.remove('hidden');
+
+            analyze();
+        } catch (err) {
+            console.error('Error starting tuner:', err);
+            tunerStatus.textContent =
+                'Error: Could not access microphone. Please allow microphone access and try again.';
+        }
+    }
+
+    // Stop tuner
+    function stopTuner() {
+        isListening = false;
+
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+
+        if (microphone) {
+            microphone.disconnect();
+            microphone = null;
+        }
+
+        if (mediaStream) {
+            mediaStream.getTracks().forEach((track) => track.stop());
+            mediaStream = null;
+        }
+
+        // Reset display
+        noteDisplay.textContent = '--';
+        noteDisplay.style.color = '';
+        octaveDisplay.textContent = '';
+        centsDisplay.textContent = '-- ¢';
+        centsDisplay.style.color = '';
+        frequencyDisplay.textContent = '-- Hz';
+        updateNeedle(0);
+        tunerStatus.textContent = '';
+
+        startBtn.classList.remove('hidden');
+        stopBtn.classList.add('hidden');
+    }
+
+    // Update selected note display
+    function updateSelectedDisplay() {
+        selectedNoteDisplay.textContent = selectedNote;
+        selectedOctaveDisplay.textContent = selectedOctave.toString();
+        const freq = getFrequency(selectedNote, selectedOctave);
+        selectedFrequencyDisplay.textContent = `${freq.toFixed(2)} Hz`;
+
+        // Update oscillator frequency if playing
+        if (oscillator && isPlaying) {
+            oscillator.frequency.setValueAtTime(freq, audioContext!.currentTime);
+        }
+    }
+
+    // Play reference tone
+    function playTone() {
+        if (!audioContext) {
+            audioContext = new AudioContext();
+        }
+
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+
+        const frequency = getFrequency(selectedNote, selectedOctave);
+
+        oscillator = audioContext.createOscillator();
+        gainNode = audioContext.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+
+        const volume = parseInt(volumeSlider.value) / 100;
+        gainNode.gain.setValueAtTime(volume * 0.5, audioContext.currentTime);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        // Smooth start
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(volume * 0.5, audioContext.currentTime + 0.05);
+
+        oscillator.start();
+        isPlaying = true;
+
+        playToneBtn.classList.add('hidden');
+        stopToneBtn.classList.remove('hidden');
+    }
+
+    // Stop reference tone
+    function stopTone() {
+        if (oscillator && gainNode && audioContext) {
+            // Smooth stop
+            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.05);
+            setTimeout(() => {
+                oscillator?.stop();
+                oscillator = null;
+                gainNode = null;
+            }, 60);
+        }
+
+        isPlaying = false;
+        playToneBtn.classList.remove('hidden');
+        stopToneBtn.classList.add('hidden');
+    }
+
+    // Event listeners
+    startBtn.addEventListener('click', startTuner);
+    stopBtn.addEventListener('click', stopTuner);
+    playToneBtn.addEventListener('click', playTone);
+    stopToneBtn.addEventListener('click', stopTone);
+
+    // Note selection buttons
+    document.querySelectorAll('.note-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            // Remove selection from all
+            document.querySelectorAll('.note-btn').forEach((b) => {
+                b.classList.remove('border-brand', 'bg-brand/10', 'text-brand-dark');
+                b.classList.add('border-slate-200', 'text-slate-700');
+            });
+            // Add selection to clicked
+            btn.classList.remove('border-slate-200', 'text-slate-700');
+            btn.classList.add('border-brand', 'bg-brand/10', 'text-brand-dark');
+
+            selectedNote = (btn as HTMLButtonElement).dataset.note!;
+            updateSelectedDisplay();
+        });
+    });
+
+    // Octave selection buttons
+    document.querySelectorAll('.octave-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            // Remove selection from all
+            document.querySelectorAll('.octave-btn').forEach((b) => {
+                b.classList.remove('border-brand', 'bg-brand/10', 'text-brand-dark');
+                b.classList.add('border-slate-200', 'text-slate-700');
+            });
+            // Add selection to clicked
+            btn.classList.remove('border-slate-200', 'text-slate-700');
+            btn.classList.add('border-brand', 'bg-brand/10', 'text-brand-dark');
+
+            selectedOctave = parseInt((btn as HTMLButtonElement).dataset.octave!);
+            updateSelectedDisplay();
+        });
+    });
+
+    // Volume control
+    volumeSlider.addEventListener('input', () => {
+        if (gainNode && audioContext && isPlaying) {
+            const volume = parseInt(volumeSlider.value) / 100;
+            gainNode.gain.setValueAtTime(volume * 0.5, audioContext.currentTime);
+        }
+    });
+
+    // A4 reference control
+    a4Input.addEventListener('change', () => {
+        a4Reference = Math.max(400, Math.min(480, parseInt(a4Input.value) || 440));
+        a4Input.value = a4Reference.toString();
+        updateSelectedDisplay();
+    });
+
+    a4Decrease.addEventListener('click', () => {
+        a4Reference = Math.max(400, a4Reference - 1);
+        a4Input.value = a4Reference.toString();
+        updateSelectedDisplay();
+    });
+
+    a4Increase.addEventListener('click', () => {
+        a4Reference = Math.min(480, a4Reference + 1);
+        a4Input.value = a4Reference.toString();
+        updateSelectedDisplay();
+    });
+
+    // Initialize display
+    updateSelectedDisplay();
+</script>
+
+<style>
+    #needle {
+        transition: transform 0.1s ease-out;
+    }
+
+    input[type='range']::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 16px;
+        width: 16px;
+        border-radius: 50%;
+        background: var(--color-brand);
+        cursor: pointer;
+    }
+
+    input[type='range']::-moz-range-thumb {
+        height: 16px;
+        width: 16px;
+        border-radius: 50%;
+        background: var(--color-brand);
+        cursor: pointer;
+        border: none;
+    }
+
+    input[type='number']::-webkit-inner-spin-button,
+    input[type='number']::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type='number'] {
+        -moz-appearance: textfield;
+    }
+</style>

@@ -32,4 +32,12 @@ export const tools: Tool[] = [
         createdAt: '2026-01-05T10:00:00-05:00',
         emoji: '📅',
     },
+    {
+        id: 'instrument-tuner',
+        title: 'Instrument Tuner',
+        description: 'Tune your instrument using your microphone or play reference tones.',
+        path: '/tools/instrument-tuner',
+        createdAt: '2026-01-15T12:00:00-05:00',
+        emoji: '🎸',
+    },
 ];
