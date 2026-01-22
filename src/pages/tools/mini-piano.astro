@@ -1,0 +1,751 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ToolHeader from '../../components/ToolHeader.astro';
+
+// Generate 88 keys: A0 (MIDI 21) to C8 (MIDI 108)
+// White keys: A, B, C, D, E, F, G
+// Black keys: A#, C#, D#, F#, G#
+const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const whiteNotes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const blackNotes = ['C#', 'D#', 'F#', 'G#', 'A#'];
+
+interface Key {
+    midi: number;
+    note: string;
+    octave: number;
+    isBlack: boolean;
+    frequency: number;
+}
+
+const keys: Key[] = [];
+
+// Start from A0 (MIDI 21) to C8 (MIDI 108)
+for (let midi = 21; midi <= 108; midi++) {
+    const noteIndex = (midi - 12) % 12;
+    const octave = Math.floor((midi - 12) / 12);
+    const note = notes[noteIndex];
+    const isBlack = note.includes('#');
+    const frequency = 440 * Math.pow(2, (midi - 69) / 12);
+    keys.push({ midi, note, octave, isBlack, frequency });
+}
+
+const whiteKeys = keys.filter((k) => !k.isBlack);
+const blackKeys = keys.filter((k) => k.isBlack);
+---
+
+<Layout
+    title="Mini Piano | Keeler Tools"
+    description="Play an 88-key piano right in your browser with touch and keyboard support."
+>
+    <ToolHeader
+        title="Mini Piano"
+        description="A full 88-key piano. Swipe to navigate, tap or click to play. Works on desktop and mobile."
+        tag="Music"
+    />
+
+    <!-- Rotate Device Prompt (mobile portrait only) -->
+    <div id="rotate-prompt" class="rotate-prompt">
+        <div class="rotate-content">
+            <svg
+                class="rotate-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+            >
+                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                <line x1="12" y1="18" x2="12" y2="18.01"></line>
+            </svg>
+            <p class="rotate-text">Rotate your device to landscape mode to play</p>
+        </div>
+    </div>
+
+    <!-- Piano Container (hidden in portrait on mobile) -->
+    <main id="piano-main" class="piano-main">
+        <!-- Navigation Bar -->
+        <div class="nav-bar">
+            <!-- Minimap -->
+            <div class="minimap-container">
+                <div id="minimap" class="minimap">
+                    {whiteKeys.map((key) => <div class="minimap-key" data-midi={key.midi} />)}
+                    <div id="minimap-viewport" class="minimap-viewport"></div>
+                </div>
+            </div>
+
+            <!-- Quick Jump Buttons -->
+            <div class="quick-jumps">
+                <button class="jump-btn" data-target="low">Low</button>
+                <button class="jump-btn" data-target="c3">C3</button>
+                <button class="jump-btn" data-target="c4">C4</button>
+                <button class="jump-btn" data-target="c5">C5</button>
+                <button class="jump-btn" data-target="high">High</button>
+            </div>
+        </div>
+
+        <!-- Keyboard Container -->
+        <div id="keyboard-container" class="keyboard-container">
+            <div id="keyboard" class="keyboard">
+                <!-- White Keys -->
+                {
+                    whiteKeys.map((key, index) => (
+                        <div
+                            class="key white-key"
+                            data-midi={key.midi}
+                            data-freq={key.frequency}
+                            data-note={key.note}
+                            data-octave={key.octave}
+                            style={`left: ${index * 40}px`}
+                            role="button"
+                            aria-label={`${key.note}${key.octave}`}
+                        >
+                            {key.note === 'C' && <span class="key-label">{`C${key.octave}`}</span>}
+                        </div>
+                    ))
+                }
+                <!-- Black Keys -->
+                {
+                    blackKeys.map((key) => {
+                        // Find the white key index before this black key
+                        const whiteKeysBefore = whiteKeys.filter((w) => w.midi < key.midi).length;
+                        // Position black key between white keys
+                        const leftPos = whiteKeysBefore * 40 - 12;
+                        return (
+                            <div
+                                class="key black-key"
+                                data-midi={key.midi}
+                                data-freq={key.frequency}
+                                data-note={key.note}
+                                data-octave={key.octave}
+                                style={`left: ${leftPos}px`}
+                                role="button"
+                                aria-label={`${key.note}${key.octave}`}
+                            />
+                        );
+                    })
+                }
+            </div>
+        </div>
+
+        <!-- Keyboard shortcuts hint (desktop only) -->
+        <div class="keyboard-hint">
+            <span>Keyboard: A-K for white keys, W E T Y U for black keys (C4 octave)</span>
+        </div>
+    </main>
+</Layout>
+
+<script>
+    // Audio Context and state
+    let audioContext: AudioContext | null = null;
+    const activeNotes: Map<number, { oscillator: OscillatorNode; gainNode: GainNode }> = new Map();
+    const activeTouches: Map<number, number> = new Map(); // touchId -> midiNote
+
+    // DOM Elements
+    const keyboardContainer = document.getElementById('keyboard-container') as HTMLElement;
+    const keyboard = document.getElementById('keyboard') as HTMLElement;
+    const minimap = document.getElementById('minimap') as HTMLElement;
+    const minimapViewport = document.getElementById('minimap-viewport') as HTMLElement;
+
+    // Keyboard mapping (A-K for white keys, W E T Y U for black keys in C4 octave)
+    const keyboardMap: { [key: string]: number } = {
+        // White keys C4-C5
+        a: 60, // C4
+        s: 62, // D4
+        d: 64, // E4
+        f: 65, // F4
+        g: 67, // G4
+        h: 69, // A4
+        j: 71, // B4
+        k: 72, // C5
+        // Black keys
+        w: 61, // C#4
+        e: 63, // D#4
+        t: 66, // F#4
+        y: 68, // G#4
+        u: 70, // A#4
+    };
+
+    // Initialize AudioContext on first user interaction
+    function initAudio() {
+        if (!audioContext) {
+            audioContext = new (
+                window.AudioContext ||
+                (window as typeof window & { webkitAudioContext: typeof AudioContext })
+                    .webkitAudioContext
+            )();
+        }
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+    }
+
+    // Play a note with ADSR envelope
+    function playNote(midi: number, frequency: number) {
+        if (!audioContext) initAudio();
+        if (!audioContext) return;
+        if (activeNotes.has(midi)) return; // Already playing
+
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+
+        // ADSR Envelope
+        const now = audioContext.currentTime;
+        const attackTime = 0.01; // 10ms
+        const decayTime = 0.09; // 90ms
+        const sustainLevel = 0.3;
+
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(0.8, now + attackTime); // Attack
+        gainNode.gain.linearRampToValueAtTime(sustainLevel, now + attackTime + decayTime); // Decay to sustain
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        oscillator.start(now);
+
+        activeNotes.set(midi, { oscillator, gainNode });
+
+        // Visual feedback
+        const keyElement = document.querySelector(`[data-midi="${midi}"]`) as HTMLElement;
+        if (keyElement) {
+            keyElement.classList.add('active');
+        }
+    }
+
+    // Stop a note with release
+    function stopNote(midi: number) {
+        const note = activeNotes.get(midi);
+        if (!note || !audioContext) return;
+
+        const { oscillator, gainNode } = note;
+        const now = audioContext.currentTime;
+        const releaseTime = 0.4; // 400ms
+
+        gainNode.gain.cancelScheduledValues(now);
+        gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+        gainNode.gain.linearRampToValueAtTime(0, now + releaseTime);
+
+        oscillator.stop(now + releaseTime);
+        activeNotes.delete(midi);
+
+        // Remove visual feedback
+        const keyElement = document.querySelector(`[data-midi="${midi}"]`) as HTMLElement;
+        if (keyElement) {
+            keyElement.classList.remove('active');
+        }
+    }
+
+    // Get key element from event coordinates
+    function getKeyFromPoint(x: number, y: number): HTMLElement | null {
+        const elements = document.elementsFromPoint(x, y);
+        // Prefer black keys (they're on top)
+        for (const el of elements) {
+            if (el.classList.contains('black-key')) return el as HTMLElement;
+        }
+        for (const el of elements) {
+            if (el.classList.contains('white-key')) return el as HTMLElement;
+        }
+        return null;
+    }
+
+    // Mouse/Touch handlers
+    function handlePointerDown(e: MouseEvent | TouchEvent) {
+        initAudio();
+
+        if (e instanceof MouseEvent) {
+            const key = getKeyFromPoint(e.clientX, e.clientY);
+            if (key) {
+                const midi = parseInt(key.dataset.midi || '0');
+                const freq = parseFloat(key.dataset.freq || '0');
+                playNote(midi, freq);
+            }
+        } else {
+            // Touch event
+            for (const touch of Array.from(e.changedTouches)) {
+                const key = getKeyFromPoint(touch.clientX, touch.clientY);
+                if (key) {
+                    const midi = parseInt(key.dataset.midi || '0');
+                    const freq = parseFloat(key.dataset.freq || '0');
+                    activeTouches.set(touch.identifier, midi);
+                    playNote(midi, freq);
+                }
+            }
+        }
+    }
+
+    function handlePointerMove(e: MouseEvent | TouchEvent) {
+        if (e instanceof TouchEvent) {
+            for (const touch of Array.from(e.changedTouches)) {
+                const currentMidi = activeTouches.get(touch.identifier);
+                const key = getKeyFromPoint(touch.clientX, touch.clientY);
+
+                if (key) {
+                    const newMidi = parseInt(key.dataset.midi || '0');
+                    const freq = parseFloat(key.dataset.freq || '0');
+
+                    if (currentMidi !== newMidi) {
+                        if (currentMidi !== undefined) stopNote(currentMidi);
+                        activeTouches.set(touch.identifier, newMidi);
+                        playNote(newMidi, freq);
+                    }
+                } else if (currentMidi !== undefined) {
+                    stopNote(currentMidi);
+                    activeTouches.delete(touch.identifier);
+                }
+            }
+        }
+    }
+
+    function handlePointerUp(e: MouseEvent | TouchEvent) {
+        if (e instanceof MouseEvent) {
+            // Stop all notes on mouse up (simple behavior)
+            for (const midi of activeNotes.keys()) {
+                stopNote(midi);
+            }
+        } else {
+            for (const touch of Array.from(e.changedTouches)) {
+                const midi = activeTouches.get(touch.identifier);
+                if (midi !== undefined) {
+                    stopNote(midi);
+                    activeTouches.delete(touch.identifier);
+                }
+            }
+        }
+    }
+
+    // Keyboard handlers
+    const pressedKeys = new Set<string>();
+
+    function handleKeyDown(e: KeyboardEvent) {
+        if (e.repeat) return;
+        const key = e.key.toLowerCase();
+        if (keyboardMap[key] && !pressedKeys.has(key)) {
+            initAudio();
+            pressedKeys.add(key);
+            const midi = keyboardMap[key];
+            const frequency = 440 * Math.pow(2, (midi - 69) / 12);
+            playNote(midi, frequency);
+        }
+    }
+
+    function handleKeyUp(e: KeyboardEvent) {
+        const key = e.key.toLowerCase();
+        if (keyboardMap[key] && pressedKeys.has(key)) {
+            pressedKeys.delete(key);
+            stopNote(keyboardMap[key]);
+        }
+    }
+
+    // Minimap and scroll handling
+    function updateMinimap() {
+        const containerWidth = keyboardContainer.clientWidth;
+        const scrollWidth = keyboard.scrollWidth;
+        const scrollLeft = keyboardContainer.scrollLeft;
+
+        const viewportWidth = (containerWidth / scrollWidth) * minimap.clientWidth;
+        const viewportLeft = (scrollLeft / scrollWidth) * minimap.clientWidth;
+
+        minimapViewport.style.width = `${viewportWidth}px`;
+        minimapViewport.style.left = `${viewportLeft}px`;
+    }
+
+    // Minimap drag handling
+    let isDraggingMinimap = false;
+
+    function handleMinimapDrag(e: MouseEvent | TouchEvent) {
+        if (!isDraggingMinimap) return;
+
+        const rect = minimap.getBoundingClientRect();
+        let clientX: number;
+
+        if (e instanceof MouseEvent) {
+            clientX = e.clientX;
+        } else {
+            clientX = e.touches[0].clientX;
+        }
+
+        const relativeX = clientX - rect.left;
+        const ratio = relativeX / rect.width;
+        const scrollWidth = keyboard.scrollWidth - keyboardContainer.clientWidth;
+        keyboardContainer.scrollLeft = ratio * scrollWidth;
+    }
+
+    minimap.addEventListener('mousedown', (e) => {
+        isDraggingMinimap = true;
+        handleMinimapDrag(e);
+    });
+    document.addEventListener('mousemove', (e) => handleMinimapDrag(e));
+    document.addEventListener('mouseup', () => (isDraggingMinimap = false));
+
+    minimap.addEventListener('touchstart', (e) => {
+        isDraggingMinimap = true;
+        handleMinimapDrag(e);
+    });
+    minimap.addEventListener('touchmove', (e) => {
+        handleMinimapDrag(e);
+        e.preventDefault();
+    });
+    minimap.addEventListener('touchend', () => (isDraggingMinimap = false));
+
+    // Quick jump buttons
+    const jumpTargets: { [key: string]: number } = {
+        low: 0,
+        c3: 48, // MIDI for C3
+        c4: 60, // MIDI for C4
+        c5: 72, // MIDI for C5
+        high: 108,
+    };
+
+    document.querySelectorAll('.jump-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const target = (btn as HTMLElement).dataset.target || 'c4';
+            let scrollTarget = 0;
+
+            if (target === 'low') {
+                scrollTarget = 0;
+            } else if (target === 'high') {
+                scrollTarget = keyboard.scrollWidth - keyboardContainer.clientWidth;
+            } else {
+                const midi = jumpTargets[target];
+                const keyElement = document.querySelector(
+                    `.white-key[data-midi="${midi}"]`
+                ) as HTMLElement;
+                if (keyElement) {
+                    scrollTarget =
+                        keyElement.offsetLeft -
+                        keyboardContainer.clientWidth / 2 +
+                        keyElement.clientWidth / 2;
+                }
+            }
+
+            keyboardContainer.scrollTo({
+                left: scrollTarget,
+                behavior: 'smooth',
+            });
+        });
+    });
+
+    // Event listeners
+    keyboard.addEventListener('mousedown', handlePointerDown);
+    keyboard.addEventListener('touchstart', handlePointerDown, { passive: false });
+    keyboard.addEventListener('touchmove', handlePointerMove, { passive: false });
+    document.addEventListener('mouseup', handlePointerUp);
+    keyboard.addEventListener('touchend', handlePointerUp);
+    keyboard.addEventListener('touchcancel', handlePointerUp);
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+
+    keyboardContainer.addEventListener('scroll', updateMinimap);
+    window.addEventListener('resize', updateMinimap);
+
+    // Prevent default touch behavior on keyboard to avoid scrolling while playing
+    keyboard.addEventListener(
+        'touchstart',
+        (e) => {
+            if ((e.target as HTMLElement).classList.contains('key')) {
+                e.preventDefault();
+            }
+        },
+        { passive: false }
+    );
+
+    // Initial setup
+    updateMinimap();
+
+    // Scroll to middle (C4) on load
+    setTimeout(() => {
+        const c4Key = document.querySelector('.white-key[data-midi="60"]') as HTMLElement;
+        if (c4Key) {
+            keyboardContainer.scrollLeft =
+                c4Key.offsetLeft - keyboardContainer.clientWidth / 2 + c4Key.clientWidth / 2;
+            updateMinimap();
+        }
+    }, 100);
+</script>
+
+<style>
+    /* Rotate prompt - only shown on mobile portrait */
+    .rotate-prompt {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        z-index: 100;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .rotate-content {
+        text-align: center;
+        color: white;
+    }
+
+    .rotate-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        animation: rotate-hint 2s ease-in-out infinite;
+    }
+
+    .rotate-text {
+        font-size: 1.25rem;
+        opacity: 0.9;
+    }
+
+    @keyframes rotate-hint {
+        0%,
+        100% {
+            transform: rotate(0deg);
+        }
+        25% {
+            transform: rotate(-15deg);
+        }
+        75% {
+            transform: rotate(90deg);
+        }
+    }
+
+    /* Show rotate prompt on mobile portrait */
+    @media (orientation: portrait) and (max-width: 768px) {
+        .rotate-prompt {
+            display: flex;
+        }
+        .piano-main {
+            display: none;
+        }
+    }
+
+    /* Piano main container */
+    .piano-main {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 140px);
+        height: calc(100dvh - 140px);
+        max-width: 100vw;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    @media (max-width: 768px) {
+        .piano-main {
+            height: calc(100vh - 100px);
+            height: calc(100dvh - 100px);
+        }
+    }
+
+    /* Navigation bar */
+    .nav-bar {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        flex-shrink: 0;
+    }
+
+    /* Minimap */
+    .minimap-container {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .minimap {
+        position: relative;
+        height: 24px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        display: flex;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    .minimap-key {
+        flex: 1;
+        height: 100%;
+        background: white;
+        border-right: 1px solid #cbd5e1;
+    }
+
+    .minimap-key:last-child {
+        border-right: none;
+    }
+
+    .minimap-viewport {
+        position: absolute;
+        top: 0;
+        height: 100%;
+        background: rgba(36, 209, 248, 0.4);
+        border: 2px solid #24d1f8;
+        border-radius: 3px;
+        pointer-events: none;
+    }
+
+    /* Quick jump buttons */
+    .quick-jumps {
+        display: flex;
+        gap: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    .jump-btn {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .jump-btn:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+
+    .jump-btn:active {
+        background: #e2e8f0;
+    }
+
+    @media (max-width: 640px) {
+        .quick-jumps {
+            gap: 0.25rem;
+        }
+        .jump-btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.625rem;
+        }
+    }
+
+    /* Keyboard container */
+    .keyboard-container {
+        flex: 1;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        touch-action: pan-x;
+        background: linear-gradient(to bottom, #1e293b 0%, #334155 100%);
+    }
+
+    .keyboard-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Keyboard */
+    .keyboard {
+        position: relative;
+        height: 100%;
+        width: calc(52 * 40px); /* 52 white keys * 40px each */
+        min-height: 160px;
+    }
+
+    @media (max-width: 768px) {
+        .keyboard {
+            width: calc(52 * 32px);
+        }
+    }
+
+    /* Keys */
+    .key {
+        position: absolute;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+        transition:
+            background 0.05s,
+            transform 0.05s;
+    }
+
+    .white-key {
+        width: 40px;
+        height: 100%;
+        background: linear-gradient(to bottom, #ffffff 0%, #f1f5f9 100%);
+        border-right: 1px solid #cbd5e1;
+        border-bottom: 3px solid #94a3b8;
+        border-radius: 0 0 6px 6px;
+        z-index: 1;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        padding-bottom: 8px;
+    }
+
+    .white-key:hover {
+        background: linear-gradient(to bottom, #f8fafc 0%, #e2e8f0 100%);
+    }
+
+    .white-key.active {
+        background: linear-gradient(to bottom, #24d1f8 0%, #0ea5e9 100%);
+        transform: translateY(2px);
+        border-bottom-width: 1px;
+    }
+
+    .black-key {
+        width: 24px;
+        height: 60%;
+        background: linear-gradient(to bottom, #1e293b 0%, #0f172a 100%);
+        border-radius: 0 0 4px 4px;
+        z-index: 2;
+        box-shadow:
+            0 4px 6px rgba(0, 0, 0, 0.3),
+            inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .black-key:hover {
+        background: linear-gradient(to bottom, #334155 0%, #1e293b 100%);
+    }
+
+    .black-key.active {
+        background: linear-gradient(to bottom, #0891b2 0%, #0e7490 100%);
+        transform: translateY(2px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    @media (max-width: 768px) {
+        .white-key {
+            width: 32px;
+        }
+        .black-key {
+            width: 20px;
+        }
+    }
+
+    /* Key labels */
+    .key-label {
+        font-size: 0.625rem;
+        font-weight: 600;
+        color: #64748b;
+        pointer-events: none;
+    }
+
+    .white-key.active .key-label {
+        color: white;
+    }
+
+    @media (max-width: 768px) {
+        .key-label {
+            font-size: 0.5rem;
+        }
+    }
+
+    /* Keyboard hint */
+    .keyboard-hint {
+        padding: 0.5rem 1rem;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        text-align: center;
+        font-size: 0.75rem;
+        color: #64748b;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+        .keyboard-hint {
+            display: none;
+        }
+    }
+</style>

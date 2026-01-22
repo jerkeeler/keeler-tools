@@ -1,7 +1,7 @@
 // Service Worker for Keeler Tools PWA
 // Version: 1.2.4
 
-const CACHE_VERSION = 'v10';
+const CACHE_VERSION = 'v11';
 const CACHE_NAME = `keeler-tools-${CACHE_VERSION}`;
 const OFFLINE_PAGE = '/offline.html';
 
@@ -14,6 +14,7 @@ const PRECACHE_URLS = [
     '/tools/random-picker/',
     '/tools/sun-angle-compass/',
     '/tools/days-until-calculator/',
+    '/tools/mini-piano/',
     OFFLINE_PAGE,
     '/favicon.svg',
     '/favicon.png',

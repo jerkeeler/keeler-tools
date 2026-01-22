@@ -53,6 +53,18 @@
                     "sizes": "192x192"
                 }
             ]
+        },
+        {
+            "name": "Mini Piano",
+            "short_name": "Piano",
+            "description": "Play an 88-key piano right in your browser.",
+            "url": "/tools/mini-piano",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
         }
     ]
 }

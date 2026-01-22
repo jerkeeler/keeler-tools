@@ -32,4 +32,12 @@ export const tools: Tool[] = [
         createdAt: '2026-01-05T10:00:00-05:00',
         emoji: '📅',
     },
+    {
+        id: 'mini-piano',
+        title: 'Mini Piano',
+        description: 'Play an 88-key piano right in your browser with touch and keyboard support.',
+        path: '/tools/mini-piano',
+        createdAt: '2026-01-21T10:00:00-05:00',
+        emoji: '🎹',
+    },
 ];
