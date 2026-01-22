@@ -77,6 +77,18 @@
                     "sizes": "192x192"
                 }
             ]
+        },
+        {
+            "name": "Chromatic Tuner",
+            "short_name": "Tuner",
+            "description": "Tune any instrument with real-time pitch detection.",
+            "url": "/tools/chromatic-tuner",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
         }
     ]
 }

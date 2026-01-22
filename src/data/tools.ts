@@ -40,4 +40,12 @@ export const tools: Tool[] = [
         createdAt: '2026-01-21T10:00:00-05:00',
         emoji: '🎹',
     },
+    {
+        id: 'chromatic-tuner',
+        title: 'Chromatic Tuner',
+        description: 'Tune any instrument with real-time pitch detection and cents display.',
+        path: '/tools/chromatic-tuner',
+        createdAt: '2026-01-22T10:00:00-05:00',
+        emoji: '🎸',
+    },
 ];

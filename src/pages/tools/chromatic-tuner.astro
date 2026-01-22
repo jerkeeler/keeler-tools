@@ -1,0 +1,770 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ToolHeader from '../../components/ToolHeader.astro';
+---
+
+<Layout
+    title="Chromatic Tuner | Keeler Tools"
+    description="Tune any instrument with real-time pitch detection and cents display."
+>
+    <ToolHeader
+        title="Chromatic Tuner"
+        description="Tune any instrument with real-time pitch detection. Uses your microphone to detect pitch and show accuracy."
+        tag="Music"
+    />
+
+    <main class="mx-auto max-w-2xl px-6 py-12 mobile-main">
+        <!-- Permission Request Card -->
+        <div id="start-card" class="card">
+            <div class="card-icon">🎸</div>
+            <h2 class="card-title">Ready to Tune</h2>
+            <p class="card-desc">
+                Click the button below to allow microphone access and start tuning your instrument.
+            </p>
+            <button id="start-btn" class="start-btn">Start Tuner</button>
+        </div>
+
+        <!-- Error Card (hidden by default) -->
+        <div id="error-card" class="card hidden">
+            <div class="card-icon">⚠️</div>
+            <h2 class="card-title">Microphone Access Required</h2>
+            <p id="error-message" class="card-desc">
+                Please allow microphone access to use the tuner.
+            </p>
+            <button id="retry-btn" class="start-btn">Try Again</button>
+        </div>
+
+        <!-- Tuner Interface (hidden until permission granted) -->
+        <div id="tuner-interface" class="tuner-interface hidden">
+            <!-- Note Display -->
+            <div class="note-section">
+                <div id="note-display" class="note-display">
+                    <span id="note-name" class="note-name">-</span><span
+                        id="note-octave"
+                        class="note-octave"></span>
+                </div>
+                <div id="frequency-display" class="frequency-display">-- Hz</div>
+            </div>
+
+            <!-- Tuning Strip -->
+            <div class="tuning-section">
+                <div class="tuning-strip">
+                    <div class="strip-labels">
+                        <span>♭</span>
+                        <span>♯</span>
+                    </div>
+                    <div class="strip-track">
+                        <div class="strip-zones">
+                            <div class="zone zone-far-flat"></div>
+                            <div class="zone zone-flat"></div>
+                            <div class="zone zone-in-tune"></div>
+                            <div class="zone zone-sharp"></div>
+                            <div class="zone zone-far-sharp"></div>
+                        </div>
+                        <div class="center-line"></div>
+                        <div id="indicator" class="indicator"></div>
+                    </div>
+                    <div class="strip-ticks">
+                        <span>-50</span>
+                        <span>-25</span>
+                        <span>0</span>
+                        <span>+25</span>
+                        <span>+50</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cents & Status -->
+            <div class="status-section">
+                <div id="cents-display" class="cents-display">
+                    <span id="cents-value">--</span>
+                    <span class="cents-unit">cents</span>
+                </div>
+                <div id="status-display" class="status-display">Listening...</div>
+            </div>
+
+            <!-- Stop Button -->
+            <button id="stop-btn" class="stop-btn">Stop Tuner</button>
+        </div>
+    </main>
+</Layout>
+
+<script>
+    // DOM Elements
+    const startCard = document.getElementById('start-card') as HTMLElement;
+    const errorCard = document.getElementById('error-card') as HTMLElement;
+    const tunerInterface = document.getElementById('tuner-interface') as HTMLElement;
+    const startBtn = document.getElementById('start-btn') as HTMLButtonElement;
+    const retryBtn = document.getElementById('retry-btn') as HTMLButtonElement;
+    const stopBtn = document.getElementById('stop-btn') as HTMLButtonElement;
+    const errorMessage = document.getElementById('error-message') as HTMLElement;
+    const indicator = document.getElementById('indicator') as HTMLElement;
+    const noteName = document.getElementById('note-name') as HTMLElement;
+    const noteOctave = document.getElementById('note-octave') as HTMLElement;
+    const frequencyDisplay = document.getElementById('frequency-display') as HTMLElement;
+    const centsValue = document.getElementById('cents-value') as HTMLElement;
+    const statusDisplay = document.getElementById('status-display') as HTMLElement;
+
+    // Audio state
+    let audioContext: AudioContext | null = null;
+    let analyser: AnalyserNode | null = null;
+    let mediaStream: MediaStream | null = null;
+    let animationFrameId: number | null = null;
+
+    // Constants
+    const A4_FREQ = 440;
+    const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const IN_TUNE_THRESHOLD = 5; // cents
+    const RMS_THRESHOLD = 0.01; // silence detection
+
+    // Smoothing - increased buffer and added exponential smoothing
+    const BUFFER_SIZE = 8;
+    const frequencyBuffer: number[] = [];
+    let displayedCents = 0; // For smooth animation
+    const SMOOTHING_FACTOR = 0.15; // Lower = more sluggish (0.1-0.3 range)
+
+    // Start tuner
+    async function startTuner() {
+        try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                    autoGainControl: false,
+                    channelCount: 1,
+                },
+            });
+
+            audioContext = new (
+                window.AudioContext ||
+                (window as typeof window & { webkitAudioContext: typeof AudioContext })
+                    .webkitAudioContext
+            )();
+
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 4096;
+
+            const source = audioContext.createMediaStreamSource(mediaStream);
+            source.connect(analyser);
+
+            // Show tuner interface
+            startCard.classList.add('hidden');
+            errorCard.classList.add('hidden');
+            tunerInterface.classList.remove('hidden');
+
+            // Start analysis loop
+            detectPitch();
+        } catch (error) {
+            showError(error);
+        }
+    }
+
+    // Show error message
+    function showError(error: unknown) {
+        startCard.classList.add('hidden');
+        tunerInterface.classList.add('hidden');
+        errorCard.classList.remove('hidden');
+
+        if (error instanceof DOMException) {
+            if (error.name === 'NotAllowedError') {
+                errorMessage.textContent =
+                    'Microphone access was denied. Please allow microphone access in your browser settings and try again.';
+            } else if (error.name === 'NotFoundError') {
+                errorMessage.textContent =
+                    'No microphone found. Please connect a microphone and try again.';
+            } else {
+                errorMessage.textContent = `Error: ${error.message}`;
+            }
+        } else {
+            errorMessage.textContent = 'An unexpected error occurred. Please try again.';
+        }
+    }
+
+    // Stop tuner
+    function stopTuner() {
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+
+        if (mediaStream) {
+            mediaStream.getTracks().forEach((track) => track.stop());
+            mediaStream = null;
+        }
+
+        if (audioContext) {
+            audioContext.close();
+            audioContext = null;
+        }
+
+        analyser = null;
+        frequencyBuffer.length = 0;
+        displayedCents = 0;
+
+        // Show start card
+        tunerInterface.classList.add('hidden');
+        errorCard.classList.add('hidden');
+        startCard.classList.remove('hidden');
+
+        // Reset displays
+        resetDisplays();
+    }
+
+    // Reset displays to default state
+    function resetDisplays() {
+        noteName.textContent = '-';
+        noteOctave.textContent = '';
+        frequencyDisplay.textContent = '-- Hz';
+        centsValue.textContent = '--';
+        statusDisplay.textContent = 'Listening...';
+        statusDisplay.className = 'status-display';
+        indicator.style.left = '50%';
+        indicator.classList.remove('active', 'in-tune');
+    }
+
+    // Autocorrelation pitch detection
+    function autoCorrelate(buffer: Float32Array, sampleRate: number): number {
+        let rms = 0;
+        for (let i = 0; i < buffer.length; i++) {
+            rms += buffer[i] * buffer[i];
+        }
+        rms = Math.sqrt(rms / buffer.length);
+
+        if (rms < RMS_THRESHOLD) {
+            return -1;
+        }
+
+        let r1 = 0;
+        let r2 = buffer.length - 1;
+        const threshold = 0.2;
+
+        for (let i = 0; i < buffer.length / 2; i++) {
+            if (Math.abs(buffer[i]) < threshold) {
+                r1 = i;
+                break;
+            }
+        }
+
+        for (let i = 1; i < buffer.length / 2; i++) {
+            if (Math.abs(buffer[buffer.length - i]) < threshold) {
+                r2 = buffer.length - i;
+                break;
+            }
+        }
+
+        const trimmedBuffer = buffer.slice(r1, r2);
+        const len = trimmedBuffer.length;
+
+        const correlations = new Float32Array(len);
+        for (let lag = 0; lag < len; lag++) {
+            let sum = 0;
+            for (let i = 0; i < len - lag; i++) {
+                sum += trimmedBuffer[i] * trimmedBuffer[i + lag];
+            }
+            correlations[lag] = sum;
+        }
+
+        let maxVal = 0;
+        let maxPos = 0;
+
+        const minLag = Math.floor(sampleRate / 1000);
+        const maxLag = Math.floor(sampleRate / 60);
+
+        for (let i = minLag; i < Math.min(maxLag, len); i++) {
+            if (correlations[i] > maxVal) {
+                maxVal = correlations[i];
+                maxPos = i;
+            }
+        }
+
+        if (maxVal < correlations[0] * 0.5) {
+            return -1;
+        }
+
+        let betterPeak = maxPos;
+        if (maxPos > 0 && maxPos < len - 1) {
+            const y1 = correlations[maxPos - 1];
+            const y2 = correlations[maxPos];
+            const y3 = correlations[maxPos + 1];
+            const a = (y1 + y3 - 2 * y2) / 2;
+            if (a !== 0) {
+                const b = (y3 - y1) / 2;
+                betterPeak = maxPos - b / (2 * a);
+            }
+        }
+
+        return sampleRate / betterPeak;
+    }
+
+    // Get smoothed frequency using median filter
+    function getSmoothedFrequency(freq: number | null): number | null {
+        if (freq === null || freq < 0) {
+            // Gradually clear buffer on silence
+            if (frequencyBuffer.length > 0) {
+                frequencyBuffer.shift();
+            }
+            return frequencyBuffer.length > 0 ? getMedian(frequencyBuffer) : null;
+        }
+
+        frequencyBuffer.push(freq);
+        if (frequencyBuffer.length > BUFFER_SIZE) {
+            frequencyBuffer.shift();
+        }
+
+        return getMedian(frequencyBuffer);
+    }
+
+    function getMedian(arr: number[]): number {
+        const sorted = [...arr].sort((a, b) => a - b);
+        const mid = Math.floor(sorted.length / 2);
+        return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    }
+
+    // Convert frequency to note info
+    function frequencyToNote(freq: number): { note: string; octave: number; cents: number } {
+        const midiNote = 12 * Math.log2(freq / A4_FREQ) + 69;
+        const roundedMidi = Math.round(midiNote);
+        const cents = (midiNote - roundedMidi) * 100;
+
+        const noteIndex = ((roundedMidi % 12) + 12) % 12;
+        const octave = Math.floor(roundedMidi / 12) - 1;
+
+        return {
+            note: NOTE_NAMES[noteIndex],
+            octave: octave,
+            cents: cents,
+        };
+    }
+
+    // Update the visual display with smooth animation
+    function updateDisplay(frequency: number | null) {
+        if (frequency === null) {
+            // Fade indicator to center when no signal
+            displayedCents = displayedCents * (1 - SMOOTHING_FACTOR);
+
+            if (Math.abs(displayedCents) < 0.5) {
+                noteName.textContent = '-';
+                noteOctave.textContent = '';
+                frequencyDisplay.textContent = '-- Hz';
+                centsValue.textContent = '--';
+                statusDisplay.textContent = 'Listening...';
+                statusDisplay.className = 'status-display';
+                indicator.classList.remove('active', 'in-tune');
+            }
+
+            const position = 50 + (displayedCents / 50) * 45;
+            indicator.style.left = `${Math.max(5, Math.min(95, position))}%`;
+            return;
+        }
+
+        const noteInfo = frequencyToNote(frequency);
+
+        // Exponential smoothing for cents display
+        const targetCents = noteInfo.cents;
+        displayedCents = displayedCents + (targetCents - displayedCents) * SMOOTHING_FACTOR;
+
+        // Update note display
+        noteName.textContent = noteInfo.note;
+        noteOctave.textContent = noteInfo.octave.toString();
+
+        // Update frequency display
+        frequencyDisplay.textContent = `${frequency.toFixed(1)} Hz`;
+
+        // Update cents display (show smoothed value)
+        const roundedCents = Math.round(displayedCents);
+        const centsSign = roundedCents > 0 ? '+' : '';
+        centsValue.textContent = `${centsSign}${roundedCents}`;
+
+        // Update indicator position (-50 to +50 cents maps to 5% to 95%)
+        const position = 50 + (displayedCents / 50) * 45;
+        indicator.style.left = `${Math.max(5, Math.min(95, position))}%`;
+        indicator.classList.add('active');
+
+        // Update status
+        const absCents = Math.abs(displayedCents);
+        if (absCents <= IN_TUNE_THRESHOLD) {
+            statusDisplay.textContent = 'In tune';
+            statusDisplay.className = 'status-display in-tune';
+            indicator.classList.add('in-tune');
+        } else if (displayedCents < 0) {
+            statusDisplay.textContent = 'Flat';
+            statusDisplay.className = 'status-display flat';
+            indicator.classList.remove('in-tune');
+        } else {
+            statusDisplay.textContent = 'Sharp';
+            statusDisplay.className = 'status-display sharp';
+            indicator.classList.remove('in-tune');
+        }
+    }
+
+    // Main pitch detection loop
+    function detectPitch() {
+        if (!analyser || !audioContext) return;
+
+        const buffer = new Float32Array(analyser.fftSize);
+        analyser.getFloatTimeDomainData(buffer);
+
+        const rawFrequency = autoCorrelate(buffer, audioContext.sampleRate);
+        const frequency = getSmoothedFrequency(rawFrequency > 0 ? rawFrequency : null);
+        updateDisplay(frequency);
+
+        animationFrameId = requestAnimationFrame(detectPitch);
+    }
+
+    // Event listeners
+    startBtn.addEventListener('click', startTuner);
+    retryBtn.addEventListener('click', startTuner);
+    stopBtn.addEventListener('click', stopTuner);
+
+    window.addEventListener('beforeunload', stopTuner);
+</script>
+
+<style>
+    .card {
+        background: white;
+        border-radius: 20px;
+        padding: 3rem 2rem;
+        text-align: center;
+        box-shadow:
+            0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-icon {
+        font-size: 3.5rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .card-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.75rem;
+    }
+
+    .card-desc {
+        color: #64748b;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+
+    .start-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem 2.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: white;
+        background: linear-gradient(135deg, #24d1f8 0%, #0ea5e9 100%);
+        border: none;
+        border-radius: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 14px rgba(36, 209, 248, 0.4);
+    }
+
+    .start-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(36, 209, 248, 0.5);
+    }
+
+    .start-btn:active {
+        transform: translateY(0);
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    /* Tuner Interface */
+    .tuner-interface {
+        background: white;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow:
+            0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        min-width: 360px;
+    }
+
+    /* Note Section */
+    .note-section {
+        padding: 2.5rem 2rem 1.5rem;
+        text-align: center;
+        background: linear-gradient(180deg, #f8fafc 0%, white 100%);
+    }
+
+    .note-display {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .note-name {
+        font-size: 5rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1;
+        letter-spacing: -0.02em;
+        min-width: 2.5ch;
+        text-align: right;
+    }
+
+    .note-octave {
+        font-size: 2.5rem;
+        font-weight: 600;
+        color: #64748b;
+        min-width: 1.5ch;
+        text-align: left;
+    }
+
+    .frequency-display {
+        font-size: 1.125rem;
+        color: #94a3b8;
+        font-family: ui-monospace, monospace;
+        font-weight: 500;
+    }
+
+    /* Tuning Section */
+    .tuning-section {
+        padding: 1.5rem 2rem 1rem;
+    }
+
+    .tuning-strip {
+        position: relative;
+    }
+
+    .strip-labels {
+        display: flex;
+        justify-content: space-between;
+        padding: 0 0.5rem;
+        margin-bottom: 0.5rem;
+        font-size: 1.25rem;
+        color: #94a3b8;
+    }
+
+    .strip-track {
+        position: relative;
+        height: 48px;
+        border-radius: 24px;
+        overflow: hidden;
+        background: #f1f5f9;
+    }
+
+    .strip-zones {
+        display: flex;
+        height: 100%;
+    }
+
+    .zone {
+        flex: 1;
+    }
+
+    .zone-far-flat {
+        background: linear-gradient(90deg, #fca5a5 0%, #fcd34d 100%);
+    }
+
+    .zone-flat {
+        background: linear-gradient(90deg, #fcd34d 0%, #bef264 100%);
+    }
+
+    .zone-in-tune {
+        background: #4ade80;
+    }
+
+    .zone-sharp {
+        background: linear-gradient(90deg, #bef264 0%, #fcd34d 100%);
+    }
+
+    .zone-far-sharp {
+        background: linear-gradient(90deg, #fcd34d 0%, #fca5a5 100%);
+    }
+
+    .center-line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        width: 3px;
+        background: white;
+        transform: translateX(-50%);
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .indicator {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 24px;
+        height: 24px;
+        background: white;
+        border: 4px solid #64748b;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition:
+            left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+            border-color 0.2s,
+            box-shadow 0.2s;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .indicator.active {
+        border-color: #0f172a;
+    }
+
+    .indicator.in-tune {
+        border-color: #16a34a;
+        box-shadow:
+            0 2px 8px rgba(0, 0, 0, 0.15),
+            0 0 0 4px rgba(34, 197, 94, 0.2);
+    }
+
+    .strip-ticks {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0.25rem 0;
+        font-size: 0.75rem;
+        color: #94a3b8;
+        font-family: ui-monospace, monospace;
+    }
+
+    /* Status Section */
+    .status-section {
+        padding: 1.5rem 2rem;
+        text-align: center;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .cents-display {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: 0.375rem;
+        margin-bottom: 0.75rem;
+    }
+
+    #cents-value {
+        font-size: 2rem;
+        font-weight: 700;
+        font-family: ui-monospace, monospace;
+        color: #0f172a;
+    }
+
+    .cents-unit {
+        font-size: 0.875rem;
+        color: #94a3b8;
+        font-weight: 500;
+    }
+
+    .status-display {
+        display: inline-block;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        padding: 0.5rem 1.25rem;
+        border-radius: 9999px;
+        background: #f1f5f9;
+        color: #64748b;
+        transition: all 0.2s;
+    }
+
+    .status-display.in-tune {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+
+    .status-display.flat,
+    .status-display.sharp {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    /* Stop Button */
+    .stop-btn {
+        display: block;
+        width: 100%;
+        padding: 1rem;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: #64748b;
+        background: #f8fafc;
+        border: none;
+        border-top: 1px solid #f1f5f9;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .stop-btn:hover {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 640px) {
+        .mobile-main {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            max-width: none;
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        .card,
+        .tuner-interface {
+            min-width: unset;
+            border-radius: 12px;
+        }
+
+        .card {
+            padding: 1.5rem 1rem;
+        }
+
+        .note-section {
+            padding: 1.25rem 0.75rem 0.75rem;
+        }
+
+        .note-name {
+            font-size: 4rem;
+            min-width: 2ch;
+        }
+
+        .note-octave {
+            font-size: 2rem;
+            min-width: 1.25ch;
+        }
+
+        .tuning-section {
+            padding: 0.75rem;
+        }
+
+        .strip-track {
+            height: 40px;
+        }
+
+        .indicator {
+            width: 20px;
+            height: 20px;
+            border-width: 3px;
+        }
+
+        .status-section {
+            padding: 0.75rem;
+        }
+
+        #cents-value {
+            font-size: 1.5rem;
+        }
+
+        .strip-labels {
+            font-size: 1rem;
+            margin-bottom: 0.375rem;
+        }
+
+        .strip-ticks {
+            font-size: 0.625rem;
+        }
+    }
+</style>
