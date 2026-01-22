@@ -59,9 +59,50 @@ import ToolHeader from '../../components/ToolHeader.astro';
 </style>
 ```
 
+## Tool ID Conventions
+
+- Use kebab-case: `my-cool-tool`
+- ID must match across: file name, tools.ts id, sw.js URL, manifest shortcut URL
+- Example: `days-until-calculator` appears as:
+    - File: `src/pages/tools/days-until-calculator.astro`
+    - tools.ts: `id: 'days-until-calculator'`
+    - sw.js: `'/tools/days-until-calculator/'`
+    - manifest.json: `"url": "/tools/days-until-calculator"`
+
+## LocalStorage Keys
+
+Pattern: `keeler-{tool-id}-{purpose}`
+
+Examples:
+
+- `keeler-random-picker-items` - stored items for random picker
+- `keeler-days-until-dates` - saved dates for countdown
+
 ## Skills
 
-After implementing a plan, run `/format-and-commit` to format code with Prettier and create a commit.
+Available skills for development workflow:
+
+- `/add-tool "Name" "Description" "emoji"` - Scaffold a new tool with all registrations
+- `/validate-tools` - Check cross-file consistency (tools.ts ↔ sw.js ↔ manifest.json)
+- `/sync-pwa` - Regenerate PWA files from tools.ts as source of truth
+- `/format-and-commit` - Format code and create a commit (runs validation first)
+
+## Tool Complexity Tiers
+
+**Tier 1 - Simple** (Random Picker, Days Until)
+
+- Local state only, no external APIs
+- Single card layout
+
+**Tier 2 - Medium** (Sun Angle)
+
+- Browser APIs (geolocation, canvas)
+- Calculations/math, multi-section layout
+
+**Tier 3 - Complex** (Mini Piano)
+
+- Web Audio/WebGL
+- Multiple input handlers, custom layouts
 
 ## Deployment
 

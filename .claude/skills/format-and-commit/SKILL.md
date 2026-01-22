@@ -9,19 +9,28 @@ Use this skill after completing a plan implementation to format code and create 
 
 ## Steps
 
-1. **Format the code**: Run `npm run format` to format all files with Prettier
+1. **Validate tools consistency**: Run `/validate-tools` checks to ensure:
+    - All tools.ts entries have corresponding .astro files
+    - All tools are registered in sw.js PRECACHE_URLS
+    - All tools have manifest.json shortcuts
+    - If validation fails, warn the user and suggest running `/sync-pwa` to fix
 
-2. **Check git status**: Review what files have been changed using `git status`
+2. **Format the code**: Run `npm run format` to format all files with Prettier
 
-3. **Stage the changes**: Stage all relevant modified files (be selective - don't stage unrelated changes)
+3. **Verify build**: Run `npm run build` to ensure the project builds successfully
+    - If build fails, stop and report the error
 
-4. **Create a meaningful commit**: Generate a commit message that:
+4. **Check git status**: Review what files have been changed using `git status`
+
+5. **Stage the changes**: Stage all relevant modified files (be selective - don't stage unrelated changes)
+
+6. **Create a meaningful commit**: Generate a commit message that:
     - Starts with a verb in imperative mood (Add, Fix, Update, Implement, Refactor, etc.)
     - Summarizes the main change in ~50 characters for the subject line
     - Optionally includes a body with more details if the change is complex
     - End with: `Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>`
 
-5. **Show the result**: Display the commit hash and summary
+7. **Show the result**: Display the commit hash and summary
 
 ## Example Commit Message Format
 
