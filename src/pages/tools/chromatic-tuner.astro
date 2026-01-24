@@ -123,6 +123,12 @@ import ToolHeader from '../../components/ToolHeader.astro';
     let displayedCents = 0; // For smooth animation
     const SMOOTHING_FACTOR = 0.15; // Lower = more sluggish (0.1-0.3 range)
 
+    // Hold display for 2 seconds after signal stops
+    const HOLD_DURATION_MS = 2000;
+    let lastSignalTime = 0;
+    let lastNoteInfo: { note: string; octave: number; cents: number; frequency: number } | null =
+        null;
+
     // Start tuner
     async function startTuner() {
         try {
@@ -200,6 +206,8 @@ import ToolHeader from '../../components/ToolHeader.astro';
         analyser = null;
         frequencyBuffer.length = 0;
         displayedCents = 0;
+        lastSignalTime = 0;
+        lastNoteInfo = null;
 
         // Show start card
         tunerInterface.classList.add('hidden');
@@ -338,8 +346,16 @@ import ToolHeader from '../../components/ToolHeader.astro';
 
     // Update the visual display with smooth animation
     function updateDisplay(frequency: number | null) {
+        const now = performance.now();
+
         if (frequency === null) {
-            // Fade indicator to center when no signal
+            // Check if we're still within the hold period
+            if (lastNoteInfo && now - lastSignalTime < HOLD_DURATION_MS) {
+                // Keep showing the last detected note - don't change anything
+                return;
+            }
+
+            // Hold period expired - fade indicator to center
             displayedCents = displayedCents * (1 - SMOOTHING_FACTOR);
 
             if (Math.abs(displayedCents) < 0.5) {
@@ -350,6 +366,7 @@ import ToolHeader from '../../components/ToolHeader.astro';
                 statusDisplay.textContent = 'Listening...';
                 statusDisplay.className = 'status-display';
                 indicator.classList.remove('active', 'in-tune');
+                lastNoteInfo = null;
             }
 
             const position = 50 + (displayedCents / 50) * 45;
@@ -357,7 +374,13 @@ import ToolHeader from '../../components/ToolHeader.astro';
             return;
         }
 
+        // We have a valid signal - update last signal time
+        lastSignalTime = now;
+
         const noteInfo = frequencyToNote(frequency);
+
+        // Store last note info for hold behavior
+        lastNoteInfo = { ...noteInfo, frequency };
 
         // Exponential smoothing for cents display
         const targetCents = noteInfo.cents;
