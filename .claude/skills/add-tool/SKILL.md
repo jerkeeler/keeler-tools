@@ -25,6 +25,7 @@ Example:
 2. **Updates** `src/data/tools.ts` - Adds entry to tools array
 3. **Updates** `public/sw.js` - Adds URL to PRECACHE_URLS and increments CACHE_VERSION
 4. **Updates** `public/manifest.json` - Adds shortcut entry
+5. **Creates** `tests/visual/{tool-id}.spec.ts` - Visual test for the new tool
 
 ## Steps
 
@@ -115,7 +116,38 @@ Add shortcut to `public/manifest.json` shortcuts array:
 }
 ```
 
-### 7. Confirm Success
+### 7. Create Visual Test
+
+Create `tests/visual/{tool-id}.spec.ts`:
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+test.beforeEach(async ({ page }) => {
+    await page.clock.setFixedTime(new Date('2026-06-15T14:00:00'));
+});
+
+test('visual: {tool-id}', async ({ page }) => {
+    await page.goto('/tools/{tool-id}/');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page).toHaveScreenshot('{tool-id}.png', {
+        fullPage: true,
+    });
+});
+```
+
+### 8. Generate Initial Baseline
+
+Run:
+
+```bash
+npm run test:visual:update -- --grep "{tool-id}"
+```
+
+This creates the initial baseline screenshots for the new tool.
+
+### 9. Confirm Success
 
 Display summary:
 
@@ -124,6 +156,8 @@ Created new tool: {title}
 
 Files created:
   - src/pages/tools/{tool-id}.astro
+  - tests/visual/{tool-id}.spec.ts
+  - tests/visual/{tool-id}.spec.ts-snapshots/ (baseline screenshots)
 
 Files updated:
   - src/data/tools.ts (added entry)

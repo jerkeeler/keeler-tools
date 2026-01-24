@@ -10,6 +10,8 @@ npm run build        # Production build to ./dist/
 npm run preview      # Preview production build
 npm run format       # Auto-format with Prettier
 npm run format:check # Check formatting (runs on commit via Husky)
+npm run test:visual          # Run visual regression tests
+npm run test:visual:update   # Update baseline screenshots
 ```
 
 ## Architecture
@@ -34,6 +36,22 @@ This is an Astro site hosting browser-only tools at tools.keeler.dev. Each tool 
     - Add URL to `PRECACHE_URLS` array
     - Increment `CACHE_VERSION` (e.g., 'v11' → 'v12')
 4. Add shortcut to `public/manifest.json`
+
+## Visual Testing
+
+Visual regression tests catch UI breakage, especially on mobile.
+
+**Running tests:**
+
+- `npm run test:visual` - Run all visual tests
+- `npm run test:visual -- --grep "tool-id"` - Run tests for specific tool
+- `npm run test:visual:update` - Update baselines after intentional UI changes
+
+**Test files:** `tests/visual/{tool-id}.spec.ts`
+**Baselines:** `tests/visual/{tool-id}.spec.ts-snapshots/` (checked into git)
+**Artifacts:** `test-results/` (gitignored)
+
+**After modifying any tool:** Run `/visual-test` skill before declaring work complete.
 
 ## Tool Page Pattern
 
