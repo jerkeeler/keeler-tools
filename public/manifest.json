@@ -89,6 +89,18 @@
                     "sizes": "192x192"
                 }
             ]
+        },
+        {
+            "name": "JSON Formatter",
+            "short_name": "JSON Format",
+            "description": "Paste unformatted or minified JSON and get beautifully formatted output.",
+            "url": "/tools/json-formatter",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
         }
     ]
 }

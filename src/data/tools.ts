@@ -48,4 +48,12 @@ export const tools: Tool[] = [
         createdAt: '2026-01-22T10:00:00-05:00',
         emoji: '🎸',
     },
+    {
+        id: 'json-formatter',
+        title: 'JSON Formatter',
+        description: 'Paste unformatted or minified JSON and get beautifully formatted output.',
+        path: '/tools/json-formatter',
+        createdAt: '2026-02-07T10:00:00-05:00',
+        emoji: '🔧',
+    },
 ];
