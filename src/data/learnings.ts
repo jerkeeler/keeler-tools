@@ -7,6 +7,13 @@ export interface Learning {
 
 export const learnings: Learning[] = [
     {
+        id: 'ai-layout-vs-ambition',
+        date: '2026-02-07',
+        title: 'AI Stumbles on Layout but Unlocks Ambition',
+        description:
+            "Claude Code can struggle with surprisingly basic CSS—centering a div or picking the right max-width took more back-and-forth than writing the entire tool. But here's the trade-off I keep coming back to: with firm guidance and active oversight, it lets me tackle projects I'd never attempt on my own due to time constraints. The AI handles the tedious scaffolding while I steer the ship. It's not autopilot, but it's a hell of a co-pilot.",
+    },
+    {
         id: 'mobile-ai-development',
         date: '2026-01-05',
         title: 'AI Development From Anywhere',
