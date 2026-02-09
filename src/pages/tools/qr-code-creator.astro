@@ -31,7 +31,7 @@ import ToolHeader from '../../components/ToolHeader.astro';
                 >
                 <select
                     id="qr-type"
-                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-base text-slate-900 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
                 >
                     <option value="url" selected>URL</option>
                     <option value="text">Plain Text</option>
@@ -209,7 +209,7 @@ import ToolHeader from '../../components/ToolHeader.astro';
 
             <!-- Geo Fields -->
             <div id="fields-geo" class="mb-6 hidden">
-                <div class="grid gap-4 sm:grid-cols-2">
+                <div class="mb-3 grid gap-4 sm:grid-cols-2">
                     <div>
                         <label
                             for="input-geo-lat"
@@ -237,6 +237,30 @@ import ToolHeader from '../../components/ToolHeader.astro';
                         />
                     </div>
                 </div>
+                <button
+                    id="geo-locate-btn"
+                    type="button"
+                    class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                >
+                    <svg
+                        class="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="2"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"></path>
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+                        ></path>
+                    </svg>
+                    Use Current Location
+                </button>
             </div>
 
             <!-- SMS Fields -->
@@ -507,6 +531,41 @@ import ToolHeader from '../../components/ToolHeader.astro';
 
         qrOutput.classList.remove('hidden');
     }
+
+    // Geolocation button
+    const geoLocateBtn = document.getElementById('geo-locate-btn') as HTMLButtonElement;
+    const geoLat = document.getElementById('input-geo-lat') as HTMLInputElement;
+    const geoLon = document.getElementById('input-geo-lon') as HTMLInputElement;
+
+    geoLocateBtn.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+            showError('Geolocation is not supported by your browser.');
+            return;
+        }
+        geoLocateBtn.disabled = true;
+        const originalText = geoLocateBtn.innerHTML;
+        geoLocateBtn.innerHTML =
+            '<svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Locating\u2026';
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                geoLat.value = position.coords.latitude.toFixed(6);
+                geoLon.value = position.coords.longitude.toFixed(6);
+                geoLocateBtn.disabled = false;
+                geoLocateBtn.innerHTML = originalText;
+            },
+            (err) => {
+                const messages: Record<number, string> = {
+                    1: 'Location permission denied.',
+                    2: 'Unable to determine your location.',
+                    3: 'Location request timed out.',
+                };
+                showError(messages[err.code] || 'Failed to get location.');
+                geoLocateBtn.disabled = false;
+                geoLocateBtn.innerHTML = originalText;
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    });
 
     // Generate button
     generateBtn.addEventListener('click', () => {
