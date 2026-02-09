@@ -7,6 +7,13 @@ export interface Learning {
 
 export const learnings: Learning[] = [
     {
+        id: 'ai-self-correction-tradeoffs',
+        date: '2026-02-09',
+        title: "AI Doesn't Always Get It Right—But It Self-Corrects in Surprising Ways",
+        description:
+            "While building a QR code encoder from scratch, the AI introduced subtle bugs in the Reed-Solomon error correction and format info placement that made the output unscannable. When I reported the problem, it autonomously installed a third-party QR library, compared its own output against the reference implementation module-by-module, identified the exact bugs, fixed them, and then uninstalled the package—all without asking. Smart debugging strategy, but also a reminder that AI will sometimes reach for external dependencies on its own. It's a double-edged sword: impressive problem-solving instinct, but you need to watch what gets added to your project, even temporarily.",
+    },
+    {
         id: 'ai-layout-vs-ambition',
         date: '2026-02-07',
         title: 'AI Stumbles on Layout but Unlocks Ambition',
