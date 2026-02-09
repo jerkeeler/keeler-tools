@@ -7,6 +7,13 @@ export interface Learning {
 
 export const learnings: Learning[] = [
     {
+        id: 'ai-harness-matters',
+        date: '2026-02-09',
+        title: 'Not All AI Harnesses Are Created Equal',
+        description:
+            "Same model, same prompts, same sub-agent architecture—different results. I ran the exact same QR code creator implementation plan through both Cursor and Claude Code. Claude Code one-shot the entire QR encoding engine (a self-contained Reed-Solomon encoder from scratch). Cursor took multiple attempts and more hand-holding to get there. The harness—how the IDE orchestrates tool calls, manages context, and sequences sub-agent work—matters just as much as the underlying model. It's a good reminder that evaluating AI coding tools isn't just about which LLM they use; the surrounding infrastructure makes or breaks the experience.",
+    },
+    {
         id: 'ai-self-correction-tradeoffs',
         date: '2026-02-09',
         title: "AI Doesn't Always Get It Right—But It Self-Corrects in Surprising Ways",
