@@ -1,6 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import ToolHeader from '../../components/ToolHeader.astro';
+import { tools } from '../../data/tools';
+const tool = tools.find((t) => t.id === 'mini-piano')!;
 
 // Generate 88 keys: A0 (MIDI 21) to C8 (MIDI 108)
 // White keys: A, B, C, D, E, F, G
@@ -41,6 +43,7 @@ const blackKeys = keys.filter((k) => k.isBlack);
         title="Mini Piano"
         description="A full 88-key piano. Swipe to navigate, tap or click to play. Works on desktop and mobile."
         tag="Music"
+        createdAt={tool.createdAt}
     />
 
     <!-- Rotate Device Prompt (mobile portrait only) -->

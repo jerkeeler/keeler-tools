@@ -1,6 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import ToolHeader from '../../components/ToolHeader.astro';
+import { tools } from '../../data/tools';
+const tool = tools.find((t) => t.id === 'qr-code-creator')!;
 ---
 
 <Layout
@@ -11,6 +13,7 @@ import ToolHeader from '../../components/ToolHeader.astro';
         title="QR Code Creator"
         description="Generate QR codes for URLs, contacts, WiFi networks, and more."
         tag="Utility"
+        createdAt={tool.createdAt}
     />
 
     <main class="flex justify-center px-4 py-12">

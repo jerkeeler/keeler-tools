@@ -1,6 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import ToolHeader from '../../components/ToolHeader.astro';
+import { tools } from '../../data/tools';
+const tool = tools.find((t) => t.id === 'days-until-calculator')!;
 ---
 
 <Layout
@@ -11,6 +13,7 @@ import ToolHeader from '../../components/ToolHeader.astro';
         title="Days Until Calculator"
         description="Pick a date, add an optional label, and see exactly how long until it arrives."
         tag="Utility"
+        createdAt={tool.createdAt}
     />
 
     <main class="mx-auto max-w-4xl px-6 py-12">

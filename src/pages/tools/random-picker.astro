@@ -1,6 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import ToolHeader from '../../components/ToolHeader.astro';
+import { tools } from '../../data/tools';
+const tool = tools.find((t) => t.id === 'random-picker')!;
 ---
 
 <Layout
@@ -11,6 +13,7 @@ import ToolHeader from '../../components/ToolHeader.astro';
         title="Random Picker"
         description="Enter your options, roll the dice, and let fate decide. Perfect for lunch choices, tie-breakers, or just shaking things up."
         tag="Utility"
+        createdAt={tool.createdAt}
     />
 
     <main class="mx-auto max-w-4xl px-6 py-12">

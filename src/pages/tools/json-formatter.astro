@@ -1,6 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import ToolHeader from '../../components/ToolHeader.astro';
+import { tools } from '../../data/tools';
+const tool = tools.find((t) => t.id === 'json-formatter')!;
 ---
 
 <Layout
@@ -11,6 +13,7 @@ import ToolHeader from '../../components/ToolHeader.astro';
         title="JSON Formatter"
         description="Paste your raw or minified JSON and get clean, readable output with 4-space indentation."
         tag="Developer"
+        createdAt={tool.createdAt}
     />
 
     <main class="flex justify-center px-4 py-12">

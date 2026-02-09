@@ -1,6 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import ToolHeader from '../../components/ToolHeader.astro';
+import { tools } from '../../data/tools';
+const tool = tools.find((t) => t.id === 'chromatic-tuner')!;
 ---
 
 <Layout
@@ -11,6 +13,7 @@ import ToolHeader from '../../components/ToolHeader.astro';
         title="Chromatic Tuner"
         description="Tune any instrument with real-time pitch detection. Uses your microphone to detect pitch and show accuracy."
         tag="Music"
+        createdAt={tool.createdAt}
     />
 
     <main class="mx-auto max-w-2xl px-6 py-12 mobile-main">

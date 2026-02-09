@@ -1,5 +1,13 @@
 ---
-const { title, description, tag } = Astro.props;
+const { title, description, tag, createdAt } = Astro.props;
+
+function formatCreatedDate(dateString?: string): string | null {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+const formattedDate = formatCreatedDate(createdAt);
 ---
 
 <header class="relative overflow-hidden border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
@@ -28,6 +36,7 @@ const { title, description, tag } = Astro.props;
                 {title}
             </h1>
             <p class="mt-1.5 max-w-xl text-sm text-slate-600">{description}</p>
+            {formattedDate && <p class="mt-1 text-xs text-slate-400">{formattedDate}</p>}
         </div>
         {
             tag ? (

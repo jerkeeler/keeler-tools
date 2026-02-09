@@ -1,6 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import ToolHeader from '../../components/ToolHeader.astro';
+import { tools } from '../../data/tools';
+const tool = tools.find((t) => t.id === 'sun-angle-compass')!;
 ---
 
 <Layout
@@ -12,6 +14,7 @@ import ToolHeader from '../../components/ToolHeader.astro';
             title="Sun Angle Compass"
             description="See where the sun sits in the sky right now, plus a simple hourly insolation curve for today."
             tag="Solar geometry"
+            createdAt={tool.createdAt}
         />
 
         <section class="mx-auto grid max-w-6xl gap-8 px-6 py-16 lg:grid-cols-[1.1fr_0.9fr]">
