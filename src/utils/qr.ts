@@ -420,7 +420,7 @@ function rsEncode(data: Uint8Array, ecCount: number): Uint8Array {
         result[ecCount - 1] = 0;
         if (coef !== 0) {
             for (let j = 0; j < ecCount; j++) {
-                result[j] ^= gfMul(gen[j], coef);
+                result[j] ^= gfMul(gen[ecCount - 1 - j], coef);
             }
         }
     }
@@ -447,7 +447,9 @@ function getECBlockInfo(version: number, ecLevel: ECLevel): ECBlockInfo {
 function selectVersion(dataBytes: number, ecLevel: ECLevel): number {
     const ecIdx = EC_INDEX[ecLevel];
     for (let v = 0; v < 40; v++) {
-        if (DATA_CAPACITY[v][ecIdx] >= dataBytes) return v + 1;
+        const ccBits = v + 1 <= 9 ? 8 : 16;
+        const totalBitsNeeded = 4 + ccBits + dataBytes * 8;
+        if (DATA_CAPACITY[v][ecIdx] * 8 >= totalBitsNeeded) return v + 1;
     }
     throw new Error('Data too large for QR code');
 }
@@ -812,8 +814,8 @@ function placeFormatInfo(matrix: boolean[][], ecLevel: ECLevel, maskNum: number)
             matrix[14 - i][8] = bit;
         }
 
-        // Second copy: bottom-left and top-right
-        if (i < 8) {
+        // Second copy: bottom-left (bits 0-6) and top-right (bits 7-14)
+        if (i < 7) {
             matrix[size - 1 - i][8] = bit;
         } else {
             matrix[8][size - 15 + i] = bit;
