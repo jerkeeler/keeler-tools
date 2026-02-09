@@ -1,0 +1,533 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ToolHeader from '../../components/ToolHeader.astro';
+---
+
+<Layout
+    title="QR Code Creator | Keeler Tools"
+    description="Generate QR codes for URLs, contacts, WiFi, and more."
+>
+    <ToolHeader
+        title="QR Code Creator"
+        description="Generate QR codes for URLs, contacts, WiFi networks, and more."
+        tag="Utility"
+    />
+
+    <main class="flex justify-center px-4 py-12">
+        <div
+            class="relative w-full max-w-screen-lg overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/50 sm:p-6"
+        >
+            <!-- Background Decoration -->
+            <div
+                class="pointer-events-none absolute -right-20 top-20 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(36,209,248,0.1)_0%,transparent_70%)]"
+                aria-hidden="true"
+            >
+            </div>
+
+            <!-- Type Selector -->
+            <div class="mb-6">
+                <label for="qr-type" class="mb-2 block text-sm font-medium text-slate-700"
+                    >QR Code Type</label
+                >
+                <select
+                    id="qr-type"
+                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                >
+                    <option value="url" selected>URL</option>
+                    <option value="text">Plain Text</option>
+                    <option value="vcard">vCard / Contact</option>
+                    <option value="wifi">WiFi Network</option>
+                    <option value="phone">Phone Number</option>
+                    <option value="geo">Geo Location</option>
+                    <option value="sms">SMS Message</option>
+                </select>
+            </div>
+
+            <!-- URL Fields -->
+            <div id="fields-url" class="mb-6">
+                <label for="input-url" class="mb-2 block text-sm font-medium text-slate-700"
+                    >URL</label
+                >
+                <input
+                    type="url"
+                    id="input-url"
+                    placeholder="https://example.com"
+                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                />
+            </div>
+
+            <!-- Plain Text Fields -->
+            <div id="fields-text" class="mb-6 hidden">
+                <label for="input-text" class="mb-2 block text-sm font-medium text-slate-700"
+                    >Text</label
+                >
+                <textarea
+                    id="input-text"
+                    rows="4"
+                    placeholder="Enter your text..."
+                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                ></textarea>
+            </div>
+
+            <!-- vCard Fields -->
+            <div id="fields-vcard" class="mb-6 hidden">
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label
+                            for="input-vcard-name"
+                            class="mb-2 block text-sm font-medium text-slate-700"
+                            >Name <span class="text-red-500">*</span></label
+                        >
+                        <input
+                            type="text"
+                            id="input-vcard-name"
+                            placeholder="John Doe"
+                            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            for="input-vcard-phone"
+                            class="mb-2 block text-sm font-medium text-slate-700">Phone</label
+                        >
+                        <input
+                            type="tel"
+                            id="input-vcard-phone"
+                            placeholder="+1234567890"
+                            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            for="input-vcard-email"
+                            class="mb-2 block text-sm font-medium text-slate-700">Email</label
+                        >
+                        <input
+                            type="email"
+                            id="input-vcard-email"
+                            placeholder="john@example.com"
+                            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            for="input-vcard-org"
+                            class="mb-2 block text-sm font-medium text-slate-700"
+                            >Organization</label
+                        >
+                        <input
+                            type="text"
+                            id="input-vcard-org"
+                            placeholder="Acme Inc."
+                            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            for="input-vcard-title"
+                            class="mb-2 block text-sm font-medium text-slate-700">Title</label
+                        >
+                        <input
+                            type="text"
+                            id="input-vcard-title"
+                            placeholder="Software Engineer"
+                            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            for="input-vcard-url"
+                            class="mb-2 block text-sm font-medium text-slate-700">URL</label
+                        >
+                        <input
+                            type="url"
+                            id="input-vcard-url"
+                            placeholder="https://example.com"
+                            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <!-- WiFi Fields -->
+            <div id="fields-wifi" class="mb-6 hidden">
+                <div class="grid gap-4 sm:grid-cols-3">
+                    <div>
+                        <label
+                            for="input-wifi-ssid"
+                            class="mb-2 block text-sm font-medium text-slate-700"
+                            >SSID <span class="text-red-500">*</span></label
+                        >
+                        <input
+                            type="text"
+                            id="input-wifi-ssid"
+                            placeholder="Network Name"
+                            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            for="input-wifi-password"
+                            class="mb-2 block text-sm font-medium text-slate-700">Password</label
+                        >
+                        <input
+                            type="password"
+                            id="input-wifi-password"
+                            placeholder="Password"
+                            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            for="input-wifi-enc"
+                            class="mb-2 block text-sm font-medium text-slate-700">Encryption</label
+                        >
+                        <select
+                            id="input-wifi-enc"
+                            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                        >
+                            <option value="WPA">WPA/WPA2</option>
+                            <option value="WEP">WEP</option>
+                            <option value="nopass">None</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phone Fields -->
+            <div id="fields-phone" class="mb-6 hidden">
+                <label for="input-phone" class="mb-2 block text-sm font-medium text-slate-700"
+                    >Phone Number</label
+                >
+                <input
+                    type="tel"
+                    id="input-phone"
+                    placeholder="+1234567890"
+                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                />
+            </div>
+
+            <!-- Geo Fields -->
+            <div id="fields-geo" class="mb-6 hidden">
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label
+                            for="input-geo-lat"
+                            class="mb-2 block text-sm font-medium text-slate-700">Latitude</label
+                        >
+                        <input
+                            type="number"
+                            id="input-geo-lat"
+                            step="0.000001"
+                            placeholder="40.7128"
+                            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            for="input-geo-lon"
+                            class="mb-2 block text-sm font-medium text-slate-700">Longitude</label
+                        >
+                        <input
+                            type="number"
+                            id="input-geo-lon"
+                            step="0.000001"
+                            placeholder="-74.0060"
+                            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <!-- SMS Fields -->
+            <div id="fields-sms" class="mb-6 hidden">
+                <div class="mb-4">
+                    <label
+                        for="input-sms-number"
+                        class="mb-2 block text-sm font-medium text-slate-700"
+                        >Phone Number <span class="text-red-500">*</span></label
+                    >
+                    <input
+                        type="tel"
+                        id="input-sms-number"
+                        placeholder="+1234567890"
+                        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                    />
+                </div>
+                <div>
+                    <label
+                        for="input-sms-message"
+                        class="mb-2 block text-sm font-medium text-slate-700">Message</label
+                    >
+                    <textarea
+                        id="input-sms-message"
+                        rows="3"
+                        placeholder="Your message..."
+                        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-dark"
+                    ></textarea>
+                </div>
+            </div>
+
+            <!-- Color Customization -->
+            <div class="mb-6 flex gap-6">
+                <div>
+                    <label for="fg-color" class="mb-2 block text-sm font-medium text-slate-700"
+                        >Foreground</label
+                    >
+                    <input
+                        type="color"
+                        id="fg-color"
+                        value="#000000"
+                        class="h-10 w-14 cursor-pointer rounded-lg border border-slate-200"
+                    />
+                </div>
+                <div>
+                    <label for="bg-color" class="mb-2 block text-sm font-medium text-slate-700"
+                        >Background</label
+                    >
+                    <input
+                        type="color"
+                        id="bg-color"
+                        value="#ffffff"
+                        class="h-10 w-14 cursor-pointer rounded-lg border border-slate-200"
+                    />
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <div class="mb-6">
+                <button
+                    id="generate-btn"
+                    class="flex items-center gap-2 rounded-xl bg-brand px-6 py-3 font-semibold text-slate-900 transition-all hover:-translate-y-0.5 hover:bg-brand-dark active:translate-y-0"
+                >
+                    Generate QR Code
+                </button>
+            </div>
+
+            <!-- Error Banner -->
+            <div
+                id="error-banner"
+                class="mb-6 hidden rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
+            >
+            </div>
+
+            <!-- Output Area -->
+            <div id="qr-output" class="hidden flex flex-col items-center gap-4">
+                <canvas id="qr-canvas"></canvas>
+                <button
+                    id="download-btn"
+                    class="rounded-xl border border-slate-200 bg-white px-6 py-3 font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                >
+                    Download PNG
+                </button>
+            </div>
+        </div>
+    </main>
+</Layout>
+
+<script>
+    import { generateQrMatrix } from '../../utils/qr';
+
+    const qrType = document.getElementById('qr-type') as HTMLSelectElement;
+    const generateBtn = document.getElementById('generate-btn') as HTMLButtonElement;
+    const downloadBtn = document.getElementById('download-btn') as HTMLButtonElement;
+    const errorBanner = document.getElementById('error-banner') as HTMLDivElement;
+    const qrOutput = document.getElementById('qr-output') as HTMLDivElement;
+    const canvas = document.getElementById('qr-canvas') as HTMLCanvasElement;
+    const fgColor = document.getElementById('fg-color') as HTMLInputElement;
+    const bgColor = document.getElementById('bg-color') as HTMLInputElement;
+
+    const fieldSections: Record<string, string> = {
+        url: 'fields-url',
+        text: 'fields-text',
+        vcard: 'fields-vcard',
+        wifi: 'fields-wifi',
+        phone: 'fields-phone',
+        geo: 'fields-geo',
+        sms: 'fields-sms',
+    };
+
+    // Type switching
+    qrType.addEventListener('change', () => {
+        for (const sectionId of Object.values(fieldSections)) {
+            document.getElementById(sectionId)?.classList.add('hidden');
+        }
+        const active = fieldSections[qrType.value];
+        if (active) document.getElementById(active)?.classList.remove('hidden');
+    });
+
+    function showError(message: string) {
+        errorBanner.textContent = message;
+        errorBanner.classList.remove('hidden');
+    }
+
+    function hideError() {
+        errorBanner.classList.add('hidden');
+    }
+
+    function val(id: string): string {
+        return (document.getElementById(id) as HTMLInputElement)?.value.trim() ?? '';
+    }
+
+    function getQrData(): string | null {
+        const type = qrType.value;
+
+        switch (type) {
+            case 'url': {
+                let url = val('input-url');
+                if (!url) {
+                    showError('Please enter a URL.');
+                    return null;
+                }
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'https://' + url;
+                }
+                return url;
+            }
+            case 'text': {
+                const text = val('input-text');
+                if (!text) {
+                    showError('Please enter some text.');
+                    return null;
+                }
+                return text;
+            }
+            case 'vcard': {
+                const name = val('input-vcard-name');
+                if (!name) {
+                    showError('Please enter a name.');
+                    return null;
+                }
+                const phone = val('input-vcard-phone');
+                const email = val('input-vcard-email');
+                const org = val('input-vcard-org');
+                const title = val('input-vcard-title');
+                const url = val('input-vcard-url');
+                let vcard = `BEGIN:VCARD\nVERSION:3.0\nN:;${name};;;\nFN:${name}`;
+                if (phone) vcard += `\nTEL:${phone}`;
+                if (email) vcard += `\nEMAIL:${email}`;
+                if (org) vcard += `\nORG:${org}`;
+                if (title) vcard += `\nTITLE:${title}`;
+                if (url) vcard += `\nURL:${url}`;
+                vcard += '\nEND:VCARD';
+                return vcard;
+            }
+            case 'wifi': {
+                const ssid = val('input-wifi-ssid');
+                if (!ssid) {
+                    showError('Please enter a network name (SSID).');
+                    return null;
+                }
+                const password = val('input-wifi-password');
+                const enc = val('input-wifi-enc');
+                if (enc === 'nopass') {
+                    return `WIFI:T:nopass;S:${ssid};;;`;
+                }
+                return `WIFI:T:${enc};S:${ssid};P:${password};;`;
+            }
+            case 'phone': {
+                const phone = val('input-phone');
+                if (!phone) {
+                    showError('Please enter a phone number.');
+                    return null;
+                }
+                return `tel:${phone}`;
+            }
+            case 'geo': {
+                const lat = val('input-geo-lat');
+                const lon = val('input-geo-lon');
+                if (!lat || !lon) {
+                    showError('Please enter both latitude and longitude.');
+                    return null;
+                }
+                return `geo:${lat},${lon}`;
+            }
+            case 'sms': {
+                const number = val('input-sms-number');
+                if (!number) {
+                    showError('Please enter a phone number.');
+                    return null;
+                }
+                const message = val('input-sms-message');
+                return `smsto:${number}:${message}`;
+            }
+            default:
+                return null;
+        }
+    }
+
+    function renderQrCode(data: string) {
+        const matrix = generateQrMatrix(data, 'H');
+        const moduleCount = matrix.length;
+        const moduleSize = Math.max(4, Math.floor(300 / moduleCount));
+        const canvasSize = moduleCount * moduleSize;
+
+        canvas.width = canvasSize;
+        canvas.height = canvasSize;
+        const ctx = canvas.getContext('2d')!;
+
+        const fg = fgColor.value;
+        const bg = bgColor.value;
+
+        // Clear and draw background
+        ctx.clearRect(0, 0, canvasSize, canvasSize);
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+        // Draw QR modules
+        ctx.fillStyle = fg;
+        for (let row = 0; row < moduleCount; row++) {
+            for (let col = 0; col < moduleCount; col++) {
+                if (matrix[row][col]) {
+                    ctx.fillRect(col * moduleSize, row * moduleSize, moduleSize, moduleSize);
+                }
+            }
+        }
+
+        // Draw logo overlay
+        const logo = new Image();
+        logo.crossOrigin = 'anonymous';
+        logo.src = '/favicon.png';
+        logo.onload = () => {
+            const logoSize = canvasSize * 0.2;
+            const logoX = (canvasSize - logoSize) / 2;
+            const logoY = (canvasSize - logoSize) / 2;
+            const padding = logoSize * 0.15;
+            // Background padding behind logo
+            ctx.fillStyle = bg;
+            ctx.fillRect(
+                logoX - padding,
+                logoY - padding,
+                logoSize + padding * 2,
+                logoSize + padding * 2
+            );
+            // Draw logo
+            ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+        };
+
+        qrOutput.classList.remove('hidden');
+    }
+
+    // Generate button
+    generateBtn.addEventListener('click', () => {
+        hideError();
+        const data = getQrData();
+        if (!data) return;
+        renderQrCode(data);
+    });
+
+    // Download button
+    downloadBtn.addEventListener('click', () => {
+        canvas.toBlob((blob) => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'qr-code.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 'image/png');
+    });
+</script>
