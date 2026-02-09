@@ -1,7 +1,7 @@
 // Service Worker for Keeler Tools PWA
 // Version: 1.2.4
 
-const CACHE_VERSION = 'v13';
+const CACHE_VERSION = 'v14';
 const CACHE_NAME = `keeler-tools-${CACHE_VERSION}`;
 const OFFLINE_PAGE = '/offline.html';
 
@@ -17,6 +17,7 @@ const PRECACHE_URLS = [
     '/tools/mini-piano/',
     '/tools/chromatic-tuner/',
     '/tools/json-formatter/',
+    '/tools/qr-code-creator/',
     OFFLINE_PAGE,
     '/favicon.svg',
     '/favicon.png',

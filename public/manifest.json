@@ -101,6 +101,18 @@
                     "sizes": "192x192"
                 }
             ]
+        },
+        {
+            "name": "QR Code Creator",
+            "short_name": "QR Creator",
+            "description": "Generate QR codes for URLs, WiFi, contacts, and more.",
+            "url": "/tools/qr-code-creator",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
         }
     ]
 }
